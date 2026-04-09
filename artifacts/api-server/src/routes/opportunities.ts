@@ -7,13 +7,15 @@ import {
   opportunityRulesTable,
   opportunityEventsTable,
 } from "@workspace/db";
-import { eq, desc, and, gte, count } from "drizzle-orm";
+import { eq, desc, and, gte, count, or, sql } from "drizzle-orm";
 import { saveOpportunity, recordSyncRun } from "../lib/opportunities/core";
 import { fetchSAMGov } from "../lib/opportunities/connectors/samgov";
 import { fetchRSSFeed } from "../lib/opportunities/connectors/rss";
 import { fetchGooglePSE } from "../lib/opportunities/connectors/google-pse";
 import { ingestEmail } from "../lib/opportunities/connectors/manual";
 import type { EmailPayload } from "../lib/opportunities/connectors/manual";
+import { getDiscoveryPresetsResponse, generatePresetQueries, PRESET_GROUPS } from "../lib/opportunities/queryHelpers";
+import { OHIO_SOURCE_PRESETS } from "../lib/opportunities/ohioSources";
 import { z } from "zod";
 
 const router = Router();
@@ -256,7 +258,7 @@ router.post("/opportunities/sources/:id/sync", async (req, res): Promise<void> =
         fetched = await fetchRSSFeed(id, String(config.feedUrl ?? ""), { tradeType: String(config.tradeType ?? ""), state: String(config.state ?? "") });
         break;
       case "google_pse":
-        fetched = await fetchGooglePSE(id, config as Parameters<typeof fetchGooglePSE>[1]);
+        fetched = await fetchGooglePSE(id, config as unknown as Parameters<typeof fetchGooglePSE>[1]);
         break;
       default:
         res.status(400).json({ error: `Connector type '${source.sourceType}' does not support automated sync` });
@@ -392,6 +394,186 @@ router.delete("/opportunities/rules/:id", async (req, res): Promise<void> => {
   const [deleted] = await db.delete(opportunityRulesTable).where(eq(opportunityRulesTable.id, id)).returning();
   if (!deleted) { res.status(404).json({ error: "Rule not found" }); return; }
   res.status(204).send();
+});
+
+router.get("/opportunities/discovery-presets", async (_req, res): Promise<void> => {
+  const presetsData = getDiscoveryPresetsResponse();
+
+  const ohioSources = OHIO_SOURCE_PRESETS.map((s) => ({
+    key: s.key,
+    name: s.name,
+    type: s.type,
+    base_url: s.base_url,
+    geography: s.geography,
+    source_kind: s.source_kind,
+    recommended_ingestion_method: s.recommended_ingestion_method,
+    default_enabled: s.default_enabled,
+    search_tags: s.search_tags,
+  }));
+
+  res.json({
+    ...presetsData,
+    ohioSources,
+  });
+});
+
+const DiscoveryRunBody = z.object({
+  presetGroup: z.string().min(1),
+});
+
+router.post("/opportunities/discovery-run", async (req, res): Promise<void> => {
+  const parsed = DiscoveryRunBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { presetGroup } = parsed.data;
+  const preset = PRESET_GROUPS.find((p) => p.key === presetGroup);
+  if (!preset) {
+    res.status(400).json({ error: `Unknown preset group: ${presetGroup}` });
+    return;
+  }
+
+  const generatedQueries = generatePresetQueries(presetGroup);
+  if (generatedQueries.length === 0) {
+    res.json({ presetGroup, queriesRun: 0, recordsFetched: 0, recordsInserted: 0, recordsSkipped: 0, errorMessage: null });
+    return;
+  }
+
+  const pseSources = await db
+    .select()
+    .from(opportunitySourcesTable)
+    .where(
+      and(
+        eq(opportunitySourcesTable.sourceType, "google_pse"),
+        eq(opportunitySourcesTable.isActive, true)
+      )
+    )
+    .limit(1);
+
+  if (pseSources.length === 0) {
+    res.status(400).json({ error: "No active Google PSE source configured. Add a Google PSE source with apiKey and searchEngineId in its config." });
+    return;
+  }
+
+  const pseSource = pseSources[0];
+  const config = (pseSource.config ?? {}) as Record<string, unknown>;
+  const apiKey = (config.apiKey ?? config.api_key ?? config.key) as string | undefined;
+  const searchEngineId = (config.searchEngineId ?? config.cx ?? config.search_engine_id) as string | undefined;
+
+  if (!apiKey || !searchEngineId) {
+    res.status(400).json({ error: "Google PSE source is missing apiKey or searchEngineId in its config." });
+    return;
+  }
+
+  const queryTexts = generatedQueries.map((q) => q.text);
+  let fetched: import("../lib/opportunities/types").NormalizedOpportunity[] = [];
+  let errorMessage: string | undefined;
+
+  try {
+    fetched = await fetchGooglePSE(pseSource.id as number, {
+      apiKey,
+      searchEngineId,
+      queries: queryTexts,
+      state: "OH",
+      limit: 50,
+    });
+  } catch (err) {
+    errorMessage = err instanceof Error ? err.message : String(err);
+  }
+
+  if (errorMessage) {
+    try {
+      await db.insert(opportunitySyncRunsTable).values({
+        sourceId: pseSource.id as number,
+        status: "error",
+        recordsFetched: 0,
+        recordsInserted: 0,
+        recordsSkipped: 0,
+        errorMessage,
+      });
+    } catch {
+    }
+    res.status(502).json({
+      presetGroup,
+      queriesRun: queryTexts.length,
+      recordsFetched: 0,
+      recordsInserted: 0,
+      recordsSkipped: 0,
+      errorMessage,
+    });
+    return;
+  }
+
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const opp of fetched) {
+    try {
+      const existingCheck = await db
+        .select({ id: opportunitiesTable.id })
+        .from(opportunitiesTable)
+        .where(
+          or(
+            and(
+              eq(opportunitiesTable.title, opp.title),
+              opp.sourceUrl
+                ? eq(opportunitiesTable.sourceUrl, opp.sourceUrl)
+                : sql`${opportunitiesTable.sourceUrl} IS NULL`
+            ),
+            opp.sourceUrl
+              ? eq(opportunitiesTable.sourceUrl, opp.sourceUrl)
+              : sql`FALSE`
+          )
+        )
+        .limit(1);
+
+      if (existingCheck.length > 0) {
+        skipped++;
+        continue;
+      }
+
+      await db.insert(opportunitiesTable).values({
+        title: opp.title,
+        description: opp.description ?? null,
+        tradeType: opp.tradeType ?? null,
+        state: opp.state ?? "OH",
+        sourceUrl: opp.sourceUrl ?? null,
+        status: "new",
+        rawPayloadJson: opp.rawPayloadJson ?? {},
+        ingestMethod: "google_pse",
+        sourceId: pseSource.id as number,
+      });
+      inserted++;
+    } catch {
+      skipped++;
+    }
+  }
+
+  try {
+    await db.insert(opportunitySyncRunsTable).values({
+      sourceId: pseSource.id as number,
+      status: "completed",
+      recordsFetched: fetched.length,
+      recordsInserted: inserted,
+      recordsSkipped: skipped,
+    });
+    await db
+      .update(opportunitySourcesTable)
+      .set({ lastSyncAt: new Date() })
+      .where(eq(opportunitySourcesTable.id, pseSource.id));
+  } catch {
+  }
+
+  res.json({
+    presetGroup,
+    queriesRun: queryTexts.length,
+    recordsFetched: fetched.length,
+    recordsInserted: inserted,
+    recordsSkipped: skipped,
+    errorMessage: null,
+  });
 });
 
 router.get("/opportunities/:id", async (req, res): Promise<void> => {

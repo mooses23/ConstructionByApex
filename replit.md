@@ -77,6 +77,13 @@ Full CRUD + sync module for contractor bid opportunities. See:
 - **Ingestion services**: `artifacts/api-server/src/lib/opportunities/` — SAM.gov, RSS, Google PSE, manual, email connectors
 - **Seed data**: `scripts/seed-opportunities.ts` — 20 opportunities, 2 sources, 1 rule
 
+#### Ohio Discovery Layer
+- **Query Library**: `artifacts/api-server/src/lib/opportunities/queryLibrary.ts` — ~70 categorized Ohio construction queries across 8 categories
+- **Query Helpers**: `artifacts/api-server/src/lib/opportunities/queryHelpers.ts` — locality modifiers (15 cities, 6 counties), query generation, 6 preset groups
+- **Ohio Sources**: `artifacts/api-server/src/lib/opportunities/ohioSources.ts` — 5 curated Ohio source presets (OhioBuys, BidNet, SAM.gov, OFCC, Ohio Local), seeded idempotently on startup via raw SQL
+- **Discovery API**: `GET /api/opportunities/discovery-presets` returns query library + preset groups; `POST /api/opportunities/discovery-run` runs preset queries via Google PSE
+- **Admin UI**: Run Discovery panel on opportunities page with 6 preset group buttons; Enhanced sources page shows geography, source kind badges, and recommended ingestion method
+
 #### Key API Endpoints
 - `GET/POST /api/opportunities` — list (filterable by status, trade_type, state, priority, min_score) and create
 - `GET/PATCH/DELETE /api/opportunities/:id` — single opportunity CRUD
@@ -86,6 +93,8 @@ Full CRUD + sync module for contractor bid opportunities. See:
 - `GET/POST/PATCH/DELETE /api/opportunities/rules` — scoring rule management
 - `GET /api/opportunities/sync-log` — sync run history
 - `POST /api/opportunities/email-ingest` — ingest opportunity from email payload
+- `GET /api/opportunities/discovery-presets` — Ohio query library and preset groups
+- `POST /api/opportunities/discovery-run` — run discovery batch via Google PSE
 
 #### Scoring Engine
 Keyword match +3, trade match +2, state match +2, budget above threshold +1, posted ≤7 days +1, deadline ≤14 days +1.

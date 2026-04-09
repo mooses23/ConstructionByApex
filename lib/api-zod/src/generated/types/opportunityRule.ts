@@ -5,6 +5,7 @@
  * Construction By Apex API
  * OpenAPI spec version: 0.1.0
  */
+import type { OpportunityRuleMetadata } from "./opportunityRuleMetadata";
 
 export interface OpportunityRule {
   id: number;
@@ -14,6 +15,7 @@ export interface OpportunityRule {
   tradeTypes: string[];
   targetStates: string[];
   minBudget?: number | null;
+  metadata: OpportunityRuleMetadata;
   createdAt: Date;
   updatedAt: Date;
 }

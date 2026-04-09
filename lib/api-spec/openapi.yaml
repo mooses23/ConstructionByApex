@@ -848,6 +848,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/OpportunityEvent"
 
+  /opportunities/discovery-presets:
+    get:
+      operationId: getDiscoveryPresets
+      tags: [opportunities]
+      summary: Get Ohio discovery query library and preset groups
+      responses:
+        "200":
+          description: Discovery presets data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryPresetsResponse"
+
+  /opportunities/discovery-run:
+    post:
+      operationId: runDiscovery
+      tags: [opportunities]
+      summary: Run a discovery batch using a preset group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiscoveryRunBody"
+      responses:
+        "200":
+          description: Discovery run result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoveryRunResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   schemas:
     HealthStatus:
@@ -1424,6 +1462,26 @@ components:
           nullable: true
       required: [id, status, recordsFetched, recordsInserted, recordsSkipped, startedAt]
 
+    OpportunityRuleMetadata:
+      type: object
+      properties:
+        weightKeyword:
+          type: number
+        weightUrgency:
+          type: number
+        weightRecency:
+          type: number
+        weightBudget:
+          type: number
+        minScore:
+          type: number
+        maxBudget:
+          type: number
+        excludeKeywords:
+          type: array
+          items:
+            type: string
+
     OpportunityRule:
       type: object
       properties:
@@ -1448,13 +1506,15 @@ components:
         minBudget:
           type: number
           nullable: true
+        metadata:
+          $ref: "#/components/schemas/OpportunityRuleMetadata"
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-      required: [id, name, isActive, keywords, tradeTypes, targetStates, createdAt, updatedAt]
+      required: [id, name, isActive, keywords, tradeTypes, targetStates, metadata, createdAt, updatedAt]
 
     CreateOpportunityBody:
       type: object
@@ -1550,6 +1610,8 @@ components:
             type: string
         minBudget:
           type: number
+        metadata:
+          $ref: "#/components/schemas/OpportunityRuleMetadata"
       required: [name]
 
     EmailIngestBody:
@@ -1597,3 +1659,99 @@ components:
           type: string
           nullable: true
       required: [sourceId, recordsFetched, recordsInserted, recordsSkipped]
+
+    DiscoveryPresetGroup:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+      required: [key, label, description, categories]
+
+    OhioSourcePreset:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        base_url:
+          type: string
+        geography:
+          type: string
+        source_kind:
+          type: string
+        recommended_ingestion_method:
+          type: string
+        default_enabled:
+          type: boolean
+        search_tags:
+          type: array
+          items:
+            type: string
+      required: [key, name, type, base_url, geography, source_kind, recommended_ingestion_method, default_enabled, search_tags]
+
+    DiscoveryPresetsResponse:
+      type: object
+      properties:
+        categories:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        presetGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/DiscoveryPresetGroup"
+        localities:
+          type: object
+          properties:
+            cities:
+              type: array
+              items:
+                type: string
+            counties:
+              type: array
+              items:
+                type: string
+          required: [cities, counties]
+        ohioSources:
+          type: array
+          items:
+            $ref: "#/components/schemas/OhioSourcePreset"
+      required: [categories, presetGroups, localities, ohioSources]
+
+    DiscoveryRunBody:
+      type: object
+      properties:
+        presetGroup:
+          type: string
+      required: [presetGroup]
+
+    DiscoveryRunResult:
+      type: object
+      properties:
+        presetGroup:
+          type: string
+        queriesRun:
+          type: integer
+        recordsFetched:
+          type: integer
+        recordsInserted:
+          type: integer
+        recordsSkipped:
+          type: integer
+        errorMessage:
+          type: string
+          nullable: true
+      required: [presetGroup, queriesRun, recordsFetched, recordsInserted, recordsSkipped]

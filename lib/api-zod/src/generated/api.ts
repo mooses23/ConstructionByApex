@@ -670,6 +670,15 @@ export const ListOpportunityRulesResponse = zod.object({
       tradeTypes: zod.array(zod.string()),
       targetStates: zod.array(zod.string()),
       minBudget: zod.number().nullish(),
+      metadata: zod.object({
+        weightKeyword: zod.number().optional(),
+        weightUrgency: zod.number().optional(),
+        weightRecency: zod.number().optional(),
+        weightBudget: zod.number().optional(),
+        minScore: zod.number().optional(),
+        maxBudget: zod.number().optional(),
+        excludeKeywords: zod.array(zod.string()).optional(),
+      }),
       createdAt: zod.coerce.date(),
       updatedAt: zod.coerce.date(),
     }),
@@ -686,6 +695,17 @@ export const CreateOpportunityRuleBody = zod.object({
   tradeTypes: zod.array(zod.string()).optional(),
   targetStates: zod.array(zod.string()).optional(),
   minBudget: zod.number().optional(),
+  metadata: zod
+    .object({
+      weightKeyword: zod.number().optional(),
+      weightUrgency: zod.number().optional(),
+      weightRecency: zod.number().optional(),
+      weightBudget: zod.number().optional(),
+      minScore: zod.number().optional(),
+      maxBudget: zod.number().optional(),
+      excludeKeywords: zod.array(zod.string()).optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -703,6 +723,15 @@ export const GetOpportunityRuleResponse = zod.object({
   tradeTypes: zod.array(zod.string()),
   targetStates: zod.array(zod.string()),
   minBudget: zod.number().nullish(),
+  metadata: zod.object({
+    weightKeyword: zod.number().optional(),
+    weightUrgency: zod.number().optional(),
+    weightRecency: zod.number().optional(),
+    weightBudget: zod.number().optional(),
+    minScore: zod.number().optional(),
+    maxBudget: zod.number().optional(),
+    excludeKeywords: zod.array(zod.string()).optional(),
+  }),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -721,6 +750,17 @@ export const UpdateOpportunityRuleBody = zod.object({
   tradeTypes: zod.array(zod.string()).optional(),
   targetStates: zod.array(zod.string()).optional(),
   minBudget: zod.number().optional(),
+  metadata: zod
+    .object({
+      weightKeyword: zod.number().optional(),
+      weightUrgency: zod.number().optional(),
+      weightRecency: zod.number().optional(),
+      weightBudget: zod.number().optional(),
+      minScore: zod.number().optional(),
+      maxBudget: zod.number().optional(),
+      excludeKeywords: zod.array(zod.string()).optional(),
+    })
+    .optional(),
 });
 
 export const UpdateOpportunityRuleResponse = zod.object({
@@ -731,6 +771,15 @@ export const UpdateOpportunityRuleResponse = zod.object({
   tradeTypes: zod.array(zod.string()),
   targetStates: zod.array(zod.string()),
   minBudget: zod.number().nullish(),
+  metadata: zod.object({
+    weightKeyword: zod.number().optional(),
+    weightUrgency: zod.number().optional(),
+    weightRecency: zod.number().optional(),
+    weightBudget: zod.number().optional(),
+    minScore: zod.number().optional(),
+    maxBudget: zod.number().optional(),
+    excludeKeywords: zod.array(zod.string()).optional(),
+  }),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -870,4 +919,52 @@ export const CreateOpportunityEventBody = zod.object({
   eventType: zod.string(),
   note: zod.string().optional(),
   metadata: zod.object({}).passthrough().optional(),
+});
+
+/**
+ * @summary Get Ohio discovery query library and preset groups
+ */
+export const GetDiscoveryPresetsResponse = zod.object({
+  categories: zod.record(zod.string(), zod.array(zod.string())),
+  presetGroups: zod.array(
+    zod.object({
+      key: zod.string(),
+      label: zod.string(),
+      description: zod.string(),
+      categories: zod.array(zod.string()),
+    }),
+  ),
+  localities: zod.object({
+    cities: zod.array(zod.string()),
+    counties: zod.array(zod.string()),
+  }),
+  ohioSources: zod.array(
+    zod.object({
+      key: zod.string(),
+      name: zod.string(),
+      type: zod.string(),
+      base_url: zod.string(),
+      geography: zod.string(),
+      source_kind: zod.string(),
+      recommended_ingestion_method: zod.string(),
+      default_enabled: zod.boolean(),
+      search_tags: zod.array(zod.string()),
+    }),
+  ),
+});
+
+/**
+ * @summary Run a discovery batch using a preset group
+ */
+export const RunDiscoveryBody = zod.object({
+  presetGroup: zod.string(),
+});
+
+export const RunDiscoveryResponse = zod.object({
+  presetGroup: zod.string(),
+  queriesRun: zod.number(),
+  recordsFetched: zod.number(),
+  recordsInserted: zod.number(),
+  recordsSkipped: zod.number(),
+  errorMessage: zod.string().nullish(),
 });

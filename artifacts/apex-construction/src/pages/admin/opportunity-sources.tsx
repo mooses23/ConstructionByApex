@@ -97,6 +97,12 @@ function parseConfig(json: string): Record<string, unknown> {
   }
 }
 
+const SOURCE_KIND_LABELS: Record<string, { label: string; color: string }> = {
+  api: { label: "API", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  portal: { label: "Portal", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  search: { label: "Search", color: "bg-amber-100 text-amber-700 border-amber-200" },
+};
+
 function SourceCard({
   source,
   onSync,
@@ -117,8 +123,11 @@ function SourceCard({
   const lastSync = timeAgo(source.lastSyncAt);
   const config = (source.config ?? {}) as Record<string, unknown>;
   const pollInterval = config.pollInterval as number | undefined;
+  const geography = config.geography as string | undefined;
+  const sourceKind = config.source_kind as string | undefined;
+  const recommendedMethod = config.recommended_ingestion_method as string | undefined;
   const displayConfig = Object.fromEntries(
-    Object.entries(config).filter(([k]) => k !== "pollInterval")
+    Object.entries(config).filter(([k]) => !["pollInterval", "geography", "source_kind", "recommended_ingestion_method", "key", "search_tags"].includes(k))
   );
   const hasConfig = Object.keys(displayConfig).length > 0;
 
@@ -130,7 +139,7 @@ function SourceCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="font-bold text-slate-900 text-sm">{source.name}</h3>
             {syncState === "error" && (
               <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 flex items-center gap-1">
@@ -142,10 +151,26 @@ function SourceCard({
                 <CheckCircle className="w-3 h-3" /> Synced
               </span>
             )}
+            {sourceKind && SOURCE_KIND_LABELS[sourceKind] && (
+              <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${SOURCE_KIND_LABELS[sourceKind].color}`}>
+                {SOURCE_KIND_LABELS[sourceKind].label}
+              </span>
+            )}
+            {sourceKind === "portal" && (
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200 font-medium">
+                Manual Review Recommended
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mb-2">
             <span>{SOURCE_TYPE_LABELS[source.sourceType] ?? source.sourceType}</span>
+            {geography && (
+              <>
+                <span>·</span>
+                <span className="text-emerald-600 font-medium">{geography}</span>
+              </>
+            )}
             {pollInterval ? (
               <>
                 <span>·</span>
@@ -164,6 +189,12 @@ function SourceCard({
               </>
             )}
           </div>
+
+          {recommendedMethod && (
+            <div className="text-xs text-slate-500 mb-2 italic">
+              {recommendedMethod}
+            </div>
+          )}
 
           {hasConfig && (
             <div className="mt-1">

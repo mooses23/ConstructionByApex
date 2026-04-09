@@ -9,6 +9,9 @@ import {
   Filter,
   ArrowUpDown,
   AlertCircle,
+  Search,
+  Loader2,
+  Zap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,6 +32,8 @@ import {
   useUpdateOpportunity,
   useCreateLead,
   useAddLeadNote,
+  useRunDiscovery,
+  useGetDiscoveryPresets,
   getListOpportunitiesQueryKey,
   ListOpportunitiesSort,
   ListOpportunitiesPriority,
@@ -94,6 +99,10 @@ export default function AdminOpportunities() {
   const [search, setSearch] = useState("");
   const [convertingId, setConvertingId] = useState<number | null>(null);
   const [convertErrorId, setConvertErrorId] = useState<number | null>(null);
+  const [runningPreset, setRunningPreset] = useState<string | null>(null);
+
+  const { data: presetsData } = useGetDiscoveryPresets();
+  const { mutate: runDiscovery } = useRunDiscovery();
 
   const { data, isLoading } = useListOpportunities({
     status: statusFilter !== "all" ? statusFilter : undefined,
@@ -206,6 +215,32 @@ export default function AdminOpportunities() {
     );
   }
 
+  function handleRunDiscovery(presetKey: string) {
+    setRunningPreset(presetKey);
+    runDiscovery(
+      { data: { presetGroup: presetKey } },
+      {
+        onSuccess: (result) => {
+          queryClient.invalidateQueries({ queryKey: getListOpportunitiesQueryKey() });
+          toast({
+            title: "Discovery complete",
+            description: `${result.recordsInserted} new opportunities found, ${result.recordsSkipped} duplicates skipped`,
+          });
+        },
+        onError: (err) => {
+          toast({
+            title: "Discovery failed",
+            description: err instanceof Error ? err.message : "An error occurred",
+            variant: "destructive",
+          });
+        },
+        onSettled: () => setRunningPreset(null),
+      }
+    );
+  }
+
+  const presetGroups = presetsData?.presetGroups ?? [];
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -219,6 +254,38 @@ export default function AdminOpportunities() {
           </Button>
         </Link>
       </div>
+
+      {presetGroups.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 p-5 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="w-4 h-4 text-amber-600" />
+            <h2 className="font-bold text-slate-900 text-sm">Run Discovery</h2>
+            <span className="text-xs text-slate-500">Ohio construction opportunities</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {presetGroups.map((group) => (
+              <Button
+                key={group.key}
+                size="sm"
+                variant="outline"
+                disabled={runningPreset !== null}
+                onClick={() => handleRunDiscovery(group.key)}
+                className="justify-start gap-2 text-xs h-auto py-2 px-3 border-amber-200 hover:bg-amber-100 hover:border-amber-300 text-left"
+              >
+                {runningPreset === group.key ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600 shrink-0" />
+                ) : (
+                  <Search className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-800 truncate">{group.label}</div>
+                  <div className="text-slate-500 font-normal truncate">{group.description}</div>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="p-4 border-b border-slate-100 flex flex-col gap-3">

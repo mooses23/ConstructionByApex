@@ -6,7 +6,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type IngestEmail201 = {
-  inserted: boolean;
-  updated: boolean;
-};
+export type DiscoveryPresetsResponseCategories = { [key: string]: string[] };

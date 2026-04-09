@@ -25,6 +25,9 @@ import type {
   CreateOpportunitySourceBody,
   CreateQuoteBody,
   DashboardStats,
+  DiscoveryPresetsResponse,
+  DiscoveryRunBody,
+  DiscoveryRunResult,
   EmailIngestBody,
   Error,
   GetRecentLeads200,
@@ -3226,4 +3229,165 @@ export const useCreateOpportunityEvent = <
   TContext
 > => {
   return useMutation(getCreateOpportunityEventMutationOptions(options));
+};
+
+/**
+ * @summary Get Ohio discovery query library and preset groups
+ */
+export const getGetDiscoveryPresetsUrl = () => {
+  return `/api/opportunities/discovery-presets`;
+};
+
+export const getDiscoveryPresets = async (
+  options?: RequestInit,
+): Promise<DiscoveryPresetsResponse> => {
+  return customFetch<DiscoveryPresetsResponse>(getGetDiscoveryPresetsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDiscoveryPresetsQueryKey = () => {
+  return [`/api/opportunities/discovery-presets`] as const;
+};
+
+export const getGetDiscoveryPresetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDiscoveryPresets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDiscoveryPresets>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDiscoveryPresetsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDiscoveryPresets>>
+  > = ({ signal }) => getDiscoveryPresets({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDiscoveryPresets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDiscoveryPresetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDiscoveryPresets>>
+>;
+export type GetDiscoveryPresetsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get Ohio discovery query library and preset groups
+ */
+
+export function useGetDiscoveryPresets<
+  TData = Awaited<ReturnType<typeof getDiscoveryPresets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getDiscoveryPresets>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDiscoveryPresetsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Run a discovery batch using a preset group
+ */
+export const getRunDiscoveryUrl = () => {
+  return `/api/opportunities/discovery-run`;
+};
+
+export const runDiscovery = async (
+  discoveryRunBody: DiscoveryRunBody,
+  options?: RequestInit,
+): Promise<DiscoveryRunResult> => {
+  return customFetch<DiscoveryRunResult>(getRunDiscoveryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(discoveryRunBody),
+  });
+};
+
+export const getRunDiscoveryMutationOptions = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runDiscovery>>,
+    TError,
+    { data: BodyType<DiscoveryRunBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof runDiscovery>>,
+  TError,
+  { data: BodyType<DiscoveryRunBody> },
+  TContext
+> => {
+  const mutationKey = ["runDiscovery"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runDiscovery>>,
+    { data: BodyType<DiscoveryRunBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return runDiscovery(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RunDiscoveryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runDiscovery>>
+>;
+export type RunDiscoveryMutationBody = BodyType<DiscoveryRunBody>;
+export type RunDiscoveryMutationError = ErrorType<Error>;
+
+/**
+ * @summary Run a discovery batch using a preset group
+ */
+export const useRunDiscovery = <
+  TError = ErrorType<Error>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runDiscovery>>,
+    TError,
+    { data: BodyType<DiscoveryRunBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof runDiscovery>>,
+  TError,
+  { data: BodyType<DiscoveryRunBody> },
+  TContext
+> => {
+  return useMutation(getRunDiscoveryMutationOptions(options));
 };

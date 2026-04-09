@@ -326,13 +326,13 @@ export interface OpportunitySyncRun {
 }
 
 export interface OpportunityRuleMetadata {
-  excludeKeywords?: string[];
-  maxBudget?: number | null;
-  minScore?: number | null;
+  weightKeyword?: number;
   weightUrgency?: number;
   weightRecency?: number;
   weightBudget?: number;
-  weightKeyword?: number;
+  minScore?: number;
+  maxBudget?: number;
+  excludeKeywords?: string[];
 }
 
 export interface OpportunityRule {
@@ -343,7 +343,7 @@ export interface OpportunityRule {
   tradeTypes: string[];
   targetStates: string[];
   minBudget?: number | null;
-  metadata?: OpportunityRuleMetadata;
+  metadata: OpportunityRuleMetadata;
   createdAt: string;
   updatedAt: string;
 }
@@ -438,6 +438,52 @@ export interface EmailIngestBody {
 
 export interface SyncResult {
   sourceId: number;
+  recordsFetched: number;
+  recordsInserted: number;
+  recordsSkipped: number;
+  errorMessage?: string | null;
+}
+
+export interface DiscoveryPresetGroup {
+  key: string;
+  label: string;
+  description: string;
+  categories: string[];
+}
+
+export interface OhioSourcePreset {
+  key: string;
+  name: string;
+  type: string;
+  base_url: string;
+  geography: string;
+  source_kind: string;
+  recommended_ingestion_method: string;
+  default_enabled: boolean;
+  search_tags: string[];
+}
+
+export type DiscoveryPresetsResponseCategories = { [key: string]: string[] };
+
+export type DiscoveryPresetsResponseLocalities = {
+  cities: string[];
+  counties: string[];
+};
+
+export interface DiscoveryPresetsResponse {
+  categories: DiscoveryPresetsResponseCategories;
+  presetGroups: DiscoveryPresetGroup[];
+  localities: DiscoveryPresetsResponseLocalities;
+  ohioSources: OhioSourcePreset[];
+}
+
+export interface DiscoveryRunBody {
+  presetGroup: string;
+}
+
+export interface DiscoveryRunResult {
+  presetGroup: string;
+  queriesRun: number;
   recordsFetched: number;
   recordsInserted: number;
   recordsSkipped: number;

@@ -5,6 +5,7 @@
  * Construction By Apex API
  * OpenAPI spec version: 0.1.0
  */
+import type { OpportunityRuleMetadata } from "./opportunityRuleMetadata";
 
 export interface CreateOpportunityRuleBody {
   name: string;
@@ -13,4 +14,5 @@ export interface CreateOpportunityRuleBody {
   tradeTypes?: string[];
   targetStates?: string[];
   minBudget?: number;
+  metadata?: OpportunityRuleMetadata;
 }

@@ -6,4 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type UpdateOpportunitySourceBodyConfigJson = { [key: string]: unknown };
+export interface DiscoveryPresetGroup {
+  key: string;
+  label: string;
+  description: string;
+  categories: string[];
+}
