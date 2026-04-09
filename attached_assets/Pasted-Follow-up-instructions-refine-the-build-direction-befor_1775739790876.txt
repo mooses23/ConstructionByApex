@@ -1,0 +1,311 @@
+Follow-up instructions — refine the build direction before continuing
+
+Do not continue building as a generic contractor template or mini-CRM. Tighten the product around solo contractor conversion and owner simplicity.
+
+Strategic correction
+
+The previous prompt defines the structure well. This follow-up defines the decision standard for every build choice:
+
+This product is not “software for contractors.”
+It is a lead-conversion machine with a lightweight owner control panel.
+
+Think:
+	•	Homepage sells trust
+	•	Quote flow captures intent fast
+	•	Admin helps one person stay organized
+	•	Everything else is secondary
+
+⸻
+
+Product guardrails
+
+1) Ruthlessly simplify
+
+If a feature feels like it belongs in:
+	•	HubSpot
+	•	Salesforce
+	•	Jobber
+	•	Monday
+	•	enterprise field-service software
+
+then it probably does not belong in v1.
+
+Do not add complexity just because it is technically possible.
+
+2) Build for one owner/operator
+
+Assume the main user is:
+	•	on their phone a lot
+	•	busy
+	•	not interested in software training
+	•	wants fast lead intake
+	•	wants to look professional
+	•	wants to follow up without chaos
+
+The admin should feel like a clean clipboard, not a back-office ERP (Enterprise Resource Planning) system.
+
+3) Design for local trust, not “startup cool”
+
+The site should feel:
+	•	real
+	•	grounded
+	•	strong
+	•	premium
+	•	clean
+	•	local
+	•	dependable
+
+Avoid:
+	•	fake-corporate wording
+	•	trendy SaaS gradients everywhere
+	•	over-animated sections
+	•	generic stock-template energy
+
+⸻
+
+Re-prioritize the UX around what actually makes money
+
+Public-site priority order
+	1.	Call / text / quote CTA visibility
+	2.	Trust
+	3.	Services clarity
+	4.	Project proof
+	5.	Fast submission
+	6.	Local SEO
+
+Admin priority order
+	1.	See new leads fast
+	2.	Update status fast
+	3.	View photos fast
+	4.	Write notes fast
+	5.	Build rough quote fast
+
+If something does not help one of those, keep it out of the core build.
+
+⸻
+
+Specific implementation adjustments
+
+A. Homepage
+
+Make the homepage feel more like a high-end local service business and less like a software mockup.
+
+Requirements:
+	•	Above the fold must clearly show:
+	•	what they do
+	•	where they work
+	•	how to contact them now
+	•	CTA grouping should be obvious:
+	•	Call Now
+	•	Text Now
+	•	Request Quote
+	•	Add a sticky mobile CTA bar
+	•	Add a strong “why homeowners choose us” section
+	•	Add a clean “how it works” 3-step section
+	•	Add featured work with strong images, not tiny cards
+	•	Add trust microcopy:
+	•	fast response
+	•	clear communication
+	•	quality workmanship
+	•	dependable scheduling
+
+B. Quote flow
+
+Treat quote capture like checkout friction reduction.
+
+Rules:
+	•	keep form visually simple
+	•	mobile first
+	•	use progressive spacing
+	•	clear field labels
+	•	photo upload must feel easy
+	•	success state should reassure user what happens next
+
+After form submission, show a success state like:
+	•	request received
+	•	expected response window
+	•	option to call/text immediately for urgent jobs
+
+C. Admin dashboard
+
+Reduce dashboard clutter.
+
+Do not make a heavy analytics dashboard.
+
+Instead:
+	•	compact KPI cards
+	•	recent leads list
+	•	quick status actions
+	•	quick link to quote draft
+	•	quick view of uploads
+
+The admin home should answer:
+	•	who came in
+	•	who needs follow-up
+	•	what is hot right now
+
+D. Lead detail page
+
+This page matters more than fancy dashboards.
+
+Make it highly usable:
+	•	clean lead header
+	•	service requested
+	•	contact info
+	•	address/city
+	•	timeline
+	•	uploaded images gallery
+	•	notes section
+	•	contact log
+	•	status controls
+	•	quote draft block
+
+This is the contractor’s workbench.
+
+⸻
+
+Visual direction upgrade
+
+Use a design system that feels like:
+	•	dark charcoal / off-black
+	•	warm white / light gray backgrounds where needed
+	•	one strong accent such as muted orange, copper, or deep construction gold
+	•	bold headings
+	•	generous whitespace
+	•	clear card separation
+	•	large tap targets
+	•	subtle shadows only
+
+Avoid:
+	•	neon
+	•	glassmorphism overload
+	•	childish rounded everything
+	•	loud gradient hero backgrounds
+	•	tiny text
+	•	excessive border noise
+
+The site should feel like:
+“this contractor is legit”
+not
+“someone installed a random template.”
+
+⸻
+
+Copy direction correction
+
+Use plainspoken copy.
+Do not write like a marketing agency or startup founder.
+
+Bad direction:
+	•	innovative solutions
+	•	tailored excellence
+	•	seamless customer journey
+	•	best-in-class results
+
+Good direction:
+	•	quality work
+	•	clear communication
+	•	fast response
+	•	honest pricing
+	•	done right
+
+Write like a reliable contractor talking to a homeowner who wants confidence, not buzzwords.
+
+⸻
+
+Technical tightening
+
+Please keep the codebase disciplined:
+
+Architecture rules
+	•	no unnecessary abstraction
+	•	no speculative feature folders
+	•	no premature service layers
+	•	no bloated state management
+	•	no package sprawl
+
+Prefer:
+	•	simple server actions or route handlers where appropriate
+	•	reusable components only where actually reused
+	•	schema that matches real workflows
+	•	straightforward Supabase queries
+	•	clean TypeScript types without overengineering
+
+Database discipline
+
+Keep schema lean.
+
+Only create tables that are clearly needed for:
+	•	leads
+	•	notes
+	•	contact log
+	•	quote drafts
+	•	gallery
+	•	testimonials
+	•	site settings
+
+Do not invent extra relational complexity unless absolutely necessary.
+
+⸻
+
+Important product judgment call
+
+The old Apex Property Care concept drifted toward a platform.
+This new build must stay a business website first.
+
+That means:
+	•	public marketing quality matters more than internal feature count
+	•	lead conversion matters more than admin sophistication
+	•	premium feel matters more than dashboard cleverness
+	•	speed matters more than feature breadth
+
+⸻
+
+Build order correction
+
+Continue in this order:
+
+Phase A — revenue surface
+	1.	homepage
+	2.	navigation
+	3.	quote request flow
+	4.	contact CTA system
+	5.	services pages
+	6.	gallery / projects
+	7.	testimonials
+	8.	service area
+	9.	about page
+
+Phase B — owner workflow
+	10.	auth
+	11.	dashboard
+	12.	leads list
+	13.	lead detail page
+	14.	notes + contact log
+	15.	quote draft support
+
+Phase C — polish
+	16.	SEO metadata
+	17.	structured data / JSON-LD
+	18.	empty states
+	19.	mobile refinements
+	20.	seed content
+	21.	README
+	22.	deployment instructions
+
+⸻
+
+Final quality standard
+
+Before moving too far, sanity-check every screen against this question:
+
+Would this help a solo contractor win more jobs and manage leads with less stress?
+
+If not, simplify it.
+
+Also, where there is a choice between:
+	•	more features vs more clarity → choose clarity
+	•	more data vs faster action → choose faster action
+	•	more admin controls vs cleaner UX → choose cleaner UX
+
+Proceed with that lens and revise any current implementation that drifts away from this standard.
