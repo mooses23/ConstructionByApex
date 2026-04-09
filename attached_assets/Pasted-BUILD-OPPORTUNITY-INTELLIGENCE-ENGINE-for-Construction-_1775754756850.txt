@@ -1,0 +1,824 @@
+BUILD OPPORTUNITY INTELLIGENCE ENGINE
+
+for Construction By Apex admin portal
+
+You are a senior principal engineer designing a production-grade lead intelligence system for a solo contractor platform.
+
+You must push design quality, architecture discipline, and usability to a high standard while keeping the system lean and maintainable.
+
+This is NOT a startup SaaS platform.
+This is NOT a generic scraping bot.
+This is NOT enterprise CRM.
+
+This is a precision-built lead intelligence engine that helps a solo contractor identify and win real jobs.
+
+The module must integrate cleanly into the existing admin portal.
+
+You are only building the Opportunities module.
+
+⸻
+
+CONTEXT
+
+Platform name:
+Construction By Apex
+
+Stack:
+Next.js App Router
+TypeScript
+Tailwind
+shadcn/ui
+Supabase Postgres
+Supabase Auth
+Supabase Storage
+Vercel deployment
+
+Admin portal already exists with:
+dashboard
+leads
+quotes
+auth
+layout system
+
+DO NOT refactor existing architecture.
+DO NOT introduce Replit dependencies.
+DO NOT introduce experimental frameworks.
+DO NOT create enterprise abstractions.
+
+Build a focused intelligence layer.
+
+⸻
+
+CORE OBJECTIVE
+
+Create a structured system that continuously surfaces relevant work opportunities from compliant sources and allows the contractor to:
+
+review
+filter
+prioritize
+convert into leads
+
+without noise
+without clutter
+without scraping chaos
+
+⸻
+
+PRODUCT PHILOSOPHY
+
+Think of this module as:
+
+Bloomberg Terminal for contractor opportunities
+
+NOT:
+
+random crawler
+generic RSS reader
+CRM add-on
+
+System should:
+
+surface signal
+hide noise
+minimize clicks
+enable quick decisions
+
+⸻
+
+MODULE NAME
+
+Opportunities
+
+⸻
+
+ROUTES
+
+Add:
+
+/admin/opportunities
+/admin/opportunities/[id]
+/admin/opportunities/sources
+/admin/opportunities/rules
+/admin/opportunities/sync-log
+
+Follow existing admin layout.
+
+⸻
+
+SYSTEM DESIGN REQUIREMENTS
+
+Build a connector-based ingestion architecture.
+
+Every data source must pass through:
+
+connector
+normalizer
+scoring engine
+review queue
+
+before becoming actionable.
+
+No direct uncontrolled ingestion into leads.
+
+⸻
+
+CONNECTOR TYPES
+
+Support these connector types:
+
+api
+rss
+email
+manual
+search
+
+All connectors must normalize data into a single unified model.
+
+⸻
+
+DATABASE SCHEMA
+
+Create the following tables.
+
+Do not modify existing tables.
+
+opportunities
+
+id uuid pk
+
+source_id uuid
+
+external_id text
+
+title text not null
+
+description text
+
+category text
+
+trade_type text
+
+city text
+
+state text
+
+budget_min numeric
+
+budget_max numeric
+
+estimated_value numeric
+
+posted_at timestamptz
+
+due_at timestamptz
+
+source_url text
+
+source_name text
+
+ingestion_type text
+
+score numeric default 0
+
+priority_level text
+
+relevance_reason text
+
+score_reasons_json jsonb
+
+raw_payload_json jsonb
+
+status text default ‘new’
+
+reviewed boolean default false
+
+converted_to_lead boolean default false
+
+created_at timestamptz default now()
+
+updated_at timestamptz default now()
+
+indexes:
+
+status
+score
+state
+trade_type
+posted_at
+
+⸻
+
+opportunity_sources
+
+id uuid pk
+
+key text unique
+
+name text
+
+ingestion_type text
+
+enabled boolean
+
+config_json jsonb
+
+poll_interval_minutes integer
+
+last_sync_at timestamptz
+
+last_error text
+
+created_at timestamptz
+
+⸻
+
+opportunity_sync_runs
+
+id uuid pk
+
+source_id uuid
+
+started_at timestamptz
+
+finished_at timestamptz
+
+status text
+
+items_fetched integer
+
+items_inserted integer
+
+items_updated integer
+
+error_text text
+
+created_at timestamptz
+
+⸻
+
+opportunity_rules
+
+id uuid pk
+
+name text
+
+enabled boolean
+
+include_keywords text[]
+
+exclude_keywords text[]
+
+states text[]
+
+trade_types text[]
+
+min_budget numeric
+
+max_budget numeric
+
+min_score numeric
+
+urgency_weight numeric
+
+recency_weight numeric
+
+budget_weight numeric
+
+keyword_weight numeric
+
+created_at timestamptz
+
+⸻
+
+opportunity_events
+
+id uuid pk
+
+opportunity_id uuid
+
+event_type text
+
+event_note text
+
+created_at timestamptz
+
+⸻
+
+RLS
+
+authenticated users full access
+
+no public access
+
+reuse existing auth patterns
+
+⸻
+
+INGESTION ARCHITECTURE
+
+Create modular ingestion system:
+
+lib/opportunities/connectors/
+
+baseConnector.ts
+
+rssConnector.ts
+
+apiConnector.ts
+
+emailConnector.ts
+
+searchConnector.ts
+
+manualConnector.ts
+
+Each connector must implement:
+
+fetch()
+normalize()
+validate()
+score()
+upsert()
+
+⸻
+
+NORMALIZATION MODEL
+
+Every connector must output:
+
+NormalizedOpportunity type:
+
+title
+
+description
+
+trade_type
+
+category
+
+city
+
+state
+
+budget_range
+
+posted_at
+
+due_at
+
+source_url
+
+external_id
+
+raw_payload
+
+confidence_score
+
+⸻
+
+SCORING ENGINE
+
+Create deterministic scoring algorithm.
+
+Must be transparent and editable.
+
+score components:
+
+keyword relevance
+trade match
+location match
+budget alignment
+recency
+deadline urgency
+
+Example scoring logic:
+
+keyword match +3
+trade match +2
+state match +2
+budget above threshold +1
+posted within 7 days +1
+deadline within 14 days +1
+
+store reasoning in:
+
+score_reasons_json
+
+example:
+
+{
+keyword_match: true,
+matched_terms: [“roof repair”,“commercial”],
+location_match: “Ohio”,
+recency_bonus: true
+}
+
+⸻
+
+PRIORITY TIERS
+
+After scoring:
+
+assign priority_level:
+
+high
+medium
+low
+
+⸻
+
+INITIAL CONNECTORS TO IMPLEMENT
+
+1 SAM.gov API connector
+
+purpose:
+government contract opportunities
+
+filters:
+keywords
+state
+posted date range
+
+store external id
+
+dedupe records
+
+preserve raw json
+
+⸻
+
+2 RSS connector
+
+generic feed ingestion
+
+configurable feed URL
+
+parse:
+
+title
+description
+link
+pubDate
+
+dedupe by guid or link
+
+⸻
+
+3 manual connector
+
+simple UI creation form
+
+allows user to create opportunity manually
+
+⸻
+
+4 search connector
+
+use search API structure
+
+search phrases:
+
+construction bid ohio
+rfp maintenance ohio
+property maintenance vendor ohio
+
+results go into review queue only
+
+⸻
+
+EMAIL INGESTION DESIGN
+
+prepare architecture for inbound email ingestion
+
+create endpoint:
+
+/api/opportunities/email-ingest
+
+store parsed payload
+
+normalize:
+
+sender
+subject
+body
+links
+attachments metadata
+
+create opportunity record
+
+do not auto-convert to lead
+
+⸻
+
+UI REQUIREMENTS
+
+match existing admin portal styling exactly.
+
+reuse components.
+
+no redesign.
+
+⸻
+
+PAGE 1
+
+/admin/opportunities
+
+table view
+
+columns:
+
+title
+score
+priority
+source
+trade
+location
+budget
+posted
+status
+
+filters:
+
+priority
+trade
+state
+min score
+
+sorting:
+
+score desc
+newest
+deadline
+
+row actions:
+
+view
+save
+dismiss
+convert to lead
+
+⸻
+
+PAGE 2
+
+/admin/opportunities/[id]
+
+sections:
+
+summary card
+
+description
+
+score explanation
+
+source link
+
+metadata
+
+actions:
+
+mark reviewed
+save
+dismiss
+convert to lead
+
+raw payload collapsible viewer
+
+activity timeline
+
+⸻
+
+PAGE 3
+
+/admin/opportunities/sources
+
+list connectors
+
+columns:
+
+name
+type
+status
+last sync
+error indicator
+
+allow:
+
+enable disable
+
+manual sync trigger
+
+edit config_json
+
+⸻
+
+PAGE 4
+
+/admin/opportunities/rules
+
+rules editor UI
+
+form inputs:
+
+include keywords
+exclude keywords
+states
+trade types
+min budget
+min score
+
+weight sliders:
+
+recency
+budget
+keyword
+urgency
+
+⸻
+
+PAGE 5
+
+/admin/opportunities/sync-log
+
+display ingestion runs
+
+columns:
+
+source
+status
+records fetched
+records inserted
+duration
+error message
+
+⸻
+
+CONVERT TO LEAD FLOW
+
+button:
+
+Convert to Lead
+
+maps:
+
+title → lead description
+
+trade_type → service type
+
+city/state → location
+
+source_url → note
+
+create link between tables
+
+store opportunity_id in lead metadata
+
+⸻
+
+DEDUPLICATION
+
+dedupe logic:
+
+source_id + external_id
+
+fallback:
+
+title similarity threshold
+
+⸻
+
+PERFORMANCE
+
+all ingestion server-side
+
+no client ingestion
+
+cron compatible
+
+use incremental syncs
+
+⸻
+
+CODE DISCIPLINE
+
+avoid package bloat
+
+avoid heavy scraping libraries
+
+avoid headless browsers
+
+avoid puppeteer
+
+avoid playwright
+
+avoid queue systems for v1
+
+keep system deterministic
+
+⸻
+
+FOLDER STRUCTURE
+
+lib/opportunities
+
+components/opportunities
+
+app/admin/opportunities
+
+types/opportunities.ts
+
+⸻
+
+TEST DATA
+
+seed 20 realistic opportunities
+
+vary:
+
+trade types
+budgets
+urgency
+
+⸻
+
+OUTPUT REQUIREMENTS
+
+working routes
+
+schema SQL
+
+types
+
+connectors
+
+scoring engine
+
+convert flow
+
+sample seed
+
+README section explaining:
+
+how ingestion works
+how to add new connectors
+how scoring works
+
+⸻
+
+QUALITY BAR
+
+system should feel:
+
+precise
+intentional
+high-signal
+low-noise
+fast
+clear
+
+contractor should be able to:
+
+open admin
+see best opportunities
+act quickly
+
+without learning software
+
+⸻
+
+DO NOT
+
+add crm features
+add messaging platform
+add invoicing
+add automation engine
+add workflow builder
+
+⸻
+
+BUILD ORDER
+
+schema
+types
+scoring engine
+connectors
+inbox UI
+detail UI
+convert flow
+sources UI
+rules UI
+sync log UI
+
+⸻
+
+FINAL EXPECTATION
+
+deliver production-quality code
+that can run on Vercel
+with Supabase
+without refactoring the rest of the platform
+
+focus on signal over noise
+clarity over cleverness
+usability over features
