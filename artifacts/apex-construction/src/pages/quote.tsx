@@ -76,7 +76,7 @@ export default function QuotePage() {
 
   function onSubmit(values: FormValues) {
     createLead(
-      { ...values, photoUrls: [] },
+      { data: { ...values, photoUrls: [] } },
       {
         onSuccess: () => setSubmitted(true),
         onError: () => {

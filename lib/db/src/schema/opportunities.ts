@@ -109,6 +109,7 @@ export const opportunityRulesTable = pgTable("opportunity_rules", {
   tradeTypes: jsonb("trade_types").notNull().default([]),
   targetStates: jsonb("target_states").notNull().default([]),
   minBudget: numeric("min_budget", { precision: 14, scale: 2 }),
+  metadata: jsonb("metadata").notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

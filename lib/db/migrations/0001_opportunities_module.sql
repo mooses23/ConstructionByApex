@@ -68,9 +68,11 @@ CREATE TABLE IF NOT EXISTS "opportunity_rules" (
   "trade_types" JSONB NOT NULL DEFAULT '[]',
   "target_states" JSONB NOT NULL DEFAULT '[]',
   "min_budget" NUMERIC(14, 2),
+  "metadata" JSONB NOT NULL DEFAULT '{}',
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+ALTER TABLE "opportunity_rules" ADD COLUMN IF NOT EXISTS "metadata" JSONB NOT NULL DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS "opportunity_events" (
   "id" SERIAL PRIMARY KEY,

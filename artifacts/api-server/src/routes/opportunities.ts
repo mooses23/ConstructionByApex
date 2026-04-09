@@ -300,6 +300,16 @@ router.get("/opportunities/rules", async (_req, res): Promise<void> => {
   res.json({ rules: rules.map(parseRule) });
 });
 
+const RuleMetadataSchema = z.object({
+  excludeKeywords: z.array(z.string()).optional(),
+  maxBudget: z.number().nullable().optional(),
+  minScore: z.number().nullable().optional(),
+  weightUrgency: z.number().min(0).max(5).optional(),
+  weightRecency: z.number().min(0).max(5).optional(),
+  weightBudget: z.number().min(0).max(5).optional(),
+  weightKeyword: z.number().min(0).max(5).optional(),
+});
+
 const CreateRuleBody = z.object({
   name: z.string().min(1),
   isActive: z.boolean().optional(),
@@ -307,6 +317,7 @@ const CreateRuleBody = z.object({
   tradeTypes: z.array(z.string()).optional(),
   targetStates: z.array(z.string()).optional(),
   minBudget: z.number().optional(),
+  metadata: RuleMetadataSchema.optional(),
 });
 
 router.post("/opportunities/rules", async (req, res): Promise<void> => {
@@ -322,6 +333,7 @@ router.post("/opportunities/rules", async (req, res): Promise<void> => {
       tradeTypes: parsed.data.tradeTypes ?? [],
       targetStates: parsed.data.targetStates ?? [],
       minBudget: parsed.data.minBudget?.toString(),
+      metadata: parsed.data.metadata ?? {},
     })
     .returning();
 
@@ -344,6 +356,7 @@ const PatchRuleBody = z.object({
   tradeTypes: z.array(z.string()).optional(),
   targetStates: z.array(z.string()).optional(),
   minBudget: z.number().nullable().optional(),
+  metadata: RuleMetadataSchema.optional(),
 });
 
 router.patch("/opportunities/rules/:id", async (req, res): Promise<void> => {
@@ -353,10 +366,14 @@ router.patch("/opportunities/rules/:id", async (req, res): Promise<void> => {
   const parsed = PatchRuleBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const updates: Record<string, unknown> = { ...parsed.data, updatedAt: new Date() };
-  if (parsed.data.minBudget !== undefined) {
-    updates.minBudget = parsed.data.minBudget?.toString() ?? null;
-  }
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
+  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+  if (parsed.data.isActive !== undefined) updates.isActive = parsed.data.isActive;
+  if (parsed.data.keywords !== undefined) updates.keywords = parsed.data.keywords;
+  if (parsed.data.tradeTypes !== undefined) updates.tradeTypes = parsed.data.tradeTypes;
+  if (parsed.data.targetStates !== undefined) updates.targetStates = parsed.data.targetStates;
+  if (parsed.data.minBudget !== undefined) updates.minBudget = parsed.data.minBudget?.toString() ?? null;
+  if (parsed.data.metadata !== undefined) updates.metadata = parsed.data.metadata;
 
   const [rule] = await db
     .update(opportunityRulesTable)

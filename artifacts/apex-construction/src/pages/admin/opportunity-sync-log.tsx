@@ -1,187 +1,228 @@
+import { useState } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Clock, Zap, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Clock, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useListSyncRuns } from "@workspace/api-client-react";
+import { useGetSyncLog, useListOpportunitySources } from "@workspace/api-client-react";
 
-type SyncRun = {
-  id: string;
-  sourceId?: string | null;
-  sourceName?: string | null;
-  startedAt: string;
-  finishedAt?: string | null;
-  status: string;
-  itemsFetched?: number | null;
-  itemsInserted?: number | null;
-  itemsUpdated?: number | null;
-  errorText?: string | null;
-  createdAt: string;
-};
+const PAGE_SIZE = 20;
 
-const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; color: string; label: string }> = {
-  success: { icon: CheckCircle2, color: "text-green-500", label: "Success" },
-  error: { icon: XCircle, color: "text-red-500", label: "Error" },
-  partial: { icon: AlertTriangle, color: "text-yellow-500", label: "Partial" },
-  running: { icon: RefreshCw, color: "text-blue-500", label: "Running" },
-};
-
-function formatDuration(start: string, end?: string | null) {
-  if (!end) return null;
-  const ms = new Date(end).getTime() - new Date(start).getTime();
+function formatDuration(startedAt: string, completedAt?: string | null) {
+  if (!completedAt) return null;
+  const ms = new Date(completedAt).getTime() - new Date(startedAt).getTime();
   if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}m ${s % 60}s`;
 }
 
-function formatTime(iso: string) {
+function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
   });
 }
 
-function timeAgo(iso: string) {
-  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const mins = Math.floor(seconds / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+function StatusIcon({ status }: { status: string }) {
+  if (status === "success")
+    return <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />;
+  if (status === "error" || status === "failed")
+    return <XCircle className="w-5 h-5 text-red-500 shrink-0" />;
+  if (status === "running")
+    return <RefreshCw className="w-5 h-5 text-blue-500 shrink-0 animate-spin" />;
+  return <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0" />;
 }
 
 export default function AdminOpportunitySyncLog() {
-  const { data, isLoading } = useListSyncRuns({ limit: 100 } as never);
+  const [page, setPage] = useState(0);
+  const offset = page * PAGE_SIZE;
 
-  const runs: SyncRun[] = (data?.runs ?? []) as SyncRun[];
-  const total = data?.total ?? 0;
+  const { data: logData, isLoading, refetch } = useGetSyncLog({ limit: PAGE_SIZE, offset });
+  const { data: sourcesData } = useListOpportunitySources();
 
-  const successCount = runs.filter((r) => r.status === "success").length;
-  const errorCount = runs.filter((r) => r.status === "error").length;
-  const totalFetched = runs.reduce((acc, r) => acc + (r.itemsFetched ?? 0), 0);
-  const totalInserted = runs.reduce((acc, r) => acc + (r.itemsInserted ?? 0), 0);
+  const runs = logData?.runs ?? [];
+  const total = logData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const sourceMap = new Map(
+    (sourcesData?.sources ?? []).map((s) => [s.id, s.name])
+  );
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-3xl">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/admin/opportunities">
-          <Button size="sm" variant="ghost" className="gap-1.5 text-slate-500 hover:text-slate-900 -ml-2">
-            <ArrowLeft className="w-4 h-4" />Back to Opportunities
+          <Button size="sm" variant="ghost" className="gap-1.5 text-slate-500 -ml-2">
+            <ArrowLeft className="w-4 h-4" /> Back to Opportunities
           </Button>
         </Link>
       </div>
 
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-            <RefreshCw className="w-6 h-6 text-amber-500" /> Sync Log
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">{total} total runs across all sources</p>
+          <h1 className="text-2xl font-extrabold text-slate-900">Sync Log</h1>
+          <p className="text-slate-500 text-sm mt-1">{total} sync runs recorded</p>
         </div>
-        <Link href="/admin/opportunities/sources">
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs">
-            <Zap className="w-3 h-3" /> Manage Sources
-          </Button>
-        </Link>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => refetch()}
+          className="gap-1.5 text-xs border-slate-200"
+        >
+          <RefreshCw className="w-3 h-3" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {[
-          { label: "Total Runs", value: total, icon: RefreshCw, color: "text-slate-600", bg: "bg-slate-50" },
-          { label: "Successful", value: successCount, icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
-          { label: "Errors", value: errorCount, icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
-          { label: "Items Fetched", value: totalFetched, icon: Zap, color: "text-amber-600", bg: "bg-amber-50" },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center mb-2`}>
-              <Icon className={`w-4 h-4 ${color}`} />
-            </div>
-            <p className="text-2xl font-black text-slate-900">{value}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50">
-          <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
+      ) : runs.length === 0 ? (
+        <div className="text-center py-16 text-slate-400">
+          <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="font-semibold">No sync runs yet</p>
+          <p className="text-sm">Trigger a sync from the Sources page to see activity here.</p>
+          <Link href="/admin/opportunities/sources">
+            <Button size="sm" className="mt-4 bg-amber-500 hover:bg-amber-600 text-black font-bold">
+              Go to Sources
+            </Button>
+          </Link>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="hidden md:grid grid-cols-12 gap-2 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
             <span className="col-span-1">Status</span>
-            <span className="col-span-3">Source</span>
+            <span className="col-span-2">Source</span>
             <span className="col-span-3">Started</span>
-            <span className="col-span-2 text-center">Fetched</span>
-            <span className="col-span-2 text-center">New / Upd</span>
-            <span className="col-span-1 text-right">Time</span>
+            <span className="col-span-1 text-center">Fetched</span>
+            <span className="col-span-1 text-center">Inserted</span>
+            <span className="col-span-1 text-center">Skipped</span>
+            <span className="col-span-2">Duration</span>
+            <span className="col-span-1">Error</span>
           </div>
-        </div>
 
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12 rounded" />)}
-          </div>
-        ) : runs.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">
-            <Clock className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            <p>No sync runs yet</p>
-          </div>
-        ) : (
           <ul className="divide-y divide-slate-100">
             {runs.map((run) => {
-              const cfg = STATUS_CONFIG[run.status] ?? STATUS_CONFIG.running;
-              const StatusIcon = cfg.icon;
-              const duration = formatDuration(run.startedAt, run.finishedAt);
+              const sourceName = run.sourceId != null
+                ? (sourceMap.get(run.sourceId) ?? `Source #${run.sourceId}`)
+                : "All Sources";
+              const duration = formatDuration(run.startedAt, run.completedAt);
+              const hasError = Boolean(run.errorMessage);
+
               return (
-                <li key={run.id} className="px-5 py-3.5 hover:bg-slate-50 transition-colors">
-                  <div className="grid grid-cols-12 gap-2 items-start">
-                    <div className="col-span-1 flex items-center pt-0.5">
-                      <StatusIcon className={`w-4 h-4 ${cfg.color} ${run.status === "running" ? "animate-spin" : ""}`} />
+                <li key={run.id}>
+                  {/* Mobile */}
+                  <div className="md:hidden px-5 py-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <StatusIcon status={run.status} />
+                      <span className="font-semibold text-sm text-slate-900">{sourceName}</span>
+                      <span className="text-xs text-slate-400">{formatDateTime(run.startedAt)}</span>
                     </div>
-                    <div className="col-span-3">
-                      <span className="text-sm font-medium text-slate-700">{run.sourceName ?? "Unknown"}</span>
-                      <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-                        run.status === "success" ? "bg-green-100 text-green-700" :
-                        run.status === "error" ? "bg-red-100 text-red-700" :
-                        run.status === "partial" ? "bg-yellow-100 text-yellow-700" :
-                        "bg-blue-100 text-blue-700"
-                      }`}>{cfg.label}</span>
+                    <div className="flex gap-4 text-xs text-slate-500 ml-7">
+                      <span className="flex items-center gap-1">
+                        <span className="font-semibold text-slate-700">{run.recordsFetched}</span> fetched
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="font-semibold text-green-600">{run.recordsInserted}</span> new
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="font-semibold text-slate-400">{run.recordsSkipped}</span> skipped
+                      </span>
+                      {duration && <span>{duration}</span>}
                     </div>
-                    <div className="col-span-3">
-                      <span className="text-sm text-slate-600">{formatTime(run.startedAt)}</span>
-                      <span className="text-xs text-slate-400 block">{timeAgo(run.startedAt)}</span>
+                    {hasError && (
+                      <div className="mt-2 ml-7 text-xs text-red-600 bg-red-50 border border-red-100 rounded p-2">
+                        {run.errorMessage}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Desktop */}
+                  <div className={`hidden md:grid grid-cols-12 gap-2 px-5 py-3.5 items-center text-sm ${hasError ? "bg-red-50/30" : ""}`}>
+                    <div className="col-span-1 flex items-center">
+                      <StatusIcon status={run.status} />
                     </div>
-                    <div className="col-span-2 text-center">
-                      <span className="text-sm font-semibold text-slate-700">{run.itemsFetched ?? 0}</span>
+                    <div className="col-span-2 text-xs text-slate-700 font-medium truncate">
+                      {sourceName}
                     </div>
-                    <div className="col-span-2 text-center">
-                      <span className="text-sm text-green-600 font-semibold">+{run.itemsInserted ?? 0}</span>
-                      <span className="text-slate-400 mx-1">/</span>
-                      <span className="text-sm text-blue-600 font-semibold">{run.itemsUpdated ?? 0}</span>
+                    <div className="col-span-3 text-xs text-slate-500">
+                      {formatDateTime(run.startedAt)}
                     </div>
-                    <div className="col-span-1 text-right">
-                      <span className="text-xs text-slate-400">{duration ?? "—"}</span>
+                    <div className="col-span-1 text-center text-sm font-semibold text-slate-700">
+                      {run.recordsFetched}
+                    </div>
+                    <div className="col-span-1 text-center text-sm font-semibold text-green-600">
+                      {run.recordsInserted}
+                    </div>
+                    <div className="col-span-1 text-center text-sm font-semibold text-slate-400">
+                      {run.recordsSkipped}
+                    </div>
+                    <div className="col-span-2 text-xs text-slate-500">
+                      {duration ?? (
+                        <span className="flex items-center gap-1 text-blue-500">
+                          <RefreshCw className="w-3 h-3 animate-spin" /> running
+                        </span>
+                      )}
+                    </div>
+                    <div className="col-span-1">
+                      {hasError ? (
+                        <span
+                          className="inline-block text-xs text-red-600 underline underline-offset-2 cursor-help truncate max-w-[80px]"
+                          title={run.errorMessage ?? ""}
+                        >
+                          {run.errorMessage?.substring(0, 20)}…
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 text-xs">—</span>
+                      )}
                     </div>
                   </div>
-                  {run.errorText && (
-                    <div className="mt-1.5 pl-7">
-                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded px-2 py-1">
-                        {run.errorText}
-                      </p>
-                    </div>
-                  )}
                 </li>
               );
             })}
           </ul>
+        </div>
+      )}
+
+      {/* Footer: count + pagination */}
+      <div className="mt-4 flex items-center justify-between text-xs text-slate-400">
+        <span className="flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5" />
+          Showing {runs.length > 0 ? offset + 1 : 0}–{offset + runs.length} of {total} sync runs
+        </span>
+
+        {total > PAGE_SIZE && (
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={page === 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              className="h-7 px-2 text-slate-500 disabled:opacity-30"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Prev
+            </Button>
+            <span className="px-2 text-slate-500">
+              Page {page + 1} of {totalPages}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={page + 1 >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="h-7 px-2 text-slate-500 disabled:opacity-30"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         )}
       </div>
-
-      {totalInserted > 0 && (
-        <p className="text-xs text-center text-slate-400 mt-4">
-          {totalInserted} opportunities inserted across all runs
-        </p>
-      )}
     </div>
   );
 }

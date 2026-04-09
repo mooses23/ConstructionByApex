@@ -325,6 +325,16 @@ export interface OpportunitySyncRun {
   completedAt?: string | null;
 }
 
+export interface OpportunityRuleMetadata {
+  excludeKeywords?: string[];
+  maxBudget?: number | null;
+  minScore?: number | null;
+  weightUrgency?: number;
+  weightRecency?: number;
+  weightBudget?: number;
+  weightKeyword?: number;
+}
+
 export interface OpportunityRule {
   id: number;
   name: string;
@@ -333,6 +343,7 @@ export interface OpportunityRule {
   tradeTypes: string[];
   targetStates: string[];
   minBudget?: number | null;
+  metadata?: OpportunityRuleMetadata;
   createdAt: string;
   updatedAt: string;
 }
@@ -406,6 +417,7 @@ export interface CreateOpportunityRuleBody {
   tradeTypes?: string[];
   targetStates?: string[];
   minBudget?: number;
+  metadata?: OpportunityRuleMetadata;
 }
 
 export type EmailIngestBodyAttachmentsItem = {
