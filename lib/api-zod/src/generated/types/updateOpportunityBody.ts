@@ -6,11 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UpdateOpportunityBodyPriorityLevel } from "./updateOpportunityBodyPriorityLevel";
-import type { UpdateOpportunityBodyStatus } from "./updateOpportunityBodyStatus";
 
 export interface UpdateOpportunityBody {
-  status?: UpdateOpportunityBodyStatus;
-  reviewed?: boolean;
-  convertedToLead?: boolean;
+  status?: string;
+  notes?: string;
+  tradeType?: string;
   priorityLevel?: UpdateOpportunityBodyPriorityLevel;
 }

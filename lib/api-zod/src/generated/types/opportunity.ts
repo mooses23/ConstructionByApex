@@ -6,34 +6,30 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { OpportunityPriorityLevel } from "./opportunityPriorityLevel";
-import type { OpportunityScoreReasonsJson } from "./opportunityScoreReasonsJson";
-import type { OpportunityStatus } from "./opportunityStatus";
 
 export interface Opportunity {
-  id: string;
-  sourceId?: string | null;
+  id: number;
+  sourceId?: number | null;
   externalId?: string | null;
   title: string;
   description?: string | null;
-  category?: string | null;
   tradeType?: string | null;
-  city?: string | null;
-  state?: string | null;
+  status: string;
+  priorityLevel: OpportunityPriorityLevel;
+  score: number;
+  scoreReasonsJson: string[];
   budgetMin?: number | null;
   budgetMax?: number | null;
-  estimatedValue?: number | null;
-  postedAt?: Date | null;
-  dueAt?: Date | null;
+  state?: string | null;
+  city?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   sourceUrl?: string | null;
-  sourceName?: string | null;
-  ingestionType?: string | null;
-  score: number;
-  priorityLevel?: OpportunityPriorityLevel;
-  relevanceReason?: string | null;
-  scoreReasonsJson?: OpportunityScoreReasonsJson;
-  status: OpportunityStatus;
-  reviewed: boolean;
-  convertedToLead: boolean;
+  postedAt?: Date | null;
+  deadlineAt?: Date | null;
+  ingestMethod: string;
+  notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

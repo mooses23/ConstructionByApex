@@ -5,11 +5,13 @@
  * Construction By Apex API
  * OpenAPI spec version: 0.1.0
  */
+import type { OpportunityEventMetadata } from "./opportunityEventMetadata";
 
 export interface OpportunityEvent {
-  id: string;
-  opportunityId: string;
+  id: number;
+  opportunityId: number;
   eventType: string;
-  eventNote?: string | null;
+  note?: string | null;
+  metadata: OpportunityEventMetadata;
   createdAt: Date;
 }

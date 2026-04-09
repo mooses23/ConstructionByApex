@@ -1,53 +1,32 @@
 export interface NormalizedOpportunity {
+  sourceId?: number;
+  externalId?: string;
   title: string;
   description?: string;
   tradeType?: string;
-  category?: string;
-  city?: string;
-  state?: string;
+  status?: string;
   budgetMin?: number;
   budgetMax?: number;
-  postedAt?: Date;
-  dueAt?: Date;
+  state?: string;
+  city?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   sourceUrl?: string;
-  externalId?: string;
-  sourceName?: string;
-  rawPayload?: unknown;
-  ingestionType: "api" | "rss" | "email" | "manual" | "search";
+  postedAt?: Date;
+  deadlineAt?: Date;
+  rawPayloadJson: Record<string, unknown>;
+  ingestMethod: string;
+  notes?: string;
 }
 
-export interface ScoringContext {
-  includeKeywords: string[];
-  excludeKeywords: string[];
-  states: string[];
-  tradeTypes: string[];
-  minBudget?: number;
-  urgencyWeight: number;
-  recencyWeight: number;
-  budgetWeight: number;
-  keywordWeight: number;
-}
-
-export interface ScoreResult {
-  score: number;
-  priorityLevel: "high" | "medium" | "low";
-  reasons: ScoreReasons;
-}
-
-export interface ScoreReasons {
-  keywordMatch: boolean;
-  matchedTerms: string[];
-  tradeMatch: boolean;
-  matchedTrade?: string;
-  locationMatch?: string;
-  recencyBonus: boolean;
-  urgencyBonus: boolean;
-  budgetBonus: boolean;
+export interface OpportunityConnector {
+  fetch(params: Record<string, unknown>): Promise<NormalizedOpportunity[]>;
 }
 
 export interface SyncRunResult {
-  itemsFetched: number;
-  itemsInserted: number;
-  itemsUpdated: number;
-  error?: string;
+  recordsFetched: number;
+  recordsInserted: number;
+  recordsSkipped: number;
+  errorMessage?: string;
 }

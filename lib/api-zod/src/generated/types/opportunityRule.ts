@@ -7,19 +7,13 @@
  */
 
 export interface OpportunityRule {
-  id: string;
+  id: number;
   name: string;
-  enabled: boolean;
-  includeKeywords?: string[] | null;
-  excludeKeywords?: string[] | null;
-  states?: string[] | null;
-  tradeTypes?: string[] | null;
+  isActive: boolean;
+  keywords: string[];
+  tradeTypes: string[];
+  targetStates: string[];
   minBudget?: number | null;
-  maxBudget?: number | null;
-  minScore?: number | null;
-  urgencyWeight: number;
-  recencyWeight: number;
-  budgetWeight: number;
-  keywordWeight: number;
   createdAt: Date;
+  updatedAt: Date;
 }

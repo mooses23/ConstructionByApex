@@ -29,8 +29,9 @@ import type {
   Error,
   GetRecentLeads200,
   GetRecentLeadsParams,
+  GetSyncLog200,
+  GetSyncLogParams,
   HealthStatus,
-  IngestEmail201,
   Lead,
   LeadContact,
   LeadDetail,
@@ -46,8 +47,6 @@ import type {
   ListProjectsParams,
   ListQuotes200,
   ListServices200,
-  ListSyncRuns200,
-  ListSyncRunsParams,
   ListTestimonials200,
   LogContactBody,
   Opportunity,
@@ -60,8 +59,6 @@ import type {
   SyncResult,
   UpdateLeadBody,
   UpdateOpportunityBody,
-  UpdateOpportunityRuleBody,
-  UpdateOpportunitySourceBody,
   UpdateQuoteBody,
 } from "./api.schemas";
 
@@ -1501,7 +1498,7 @@ export function useGetRecentLeads<
 }
 
 /**
- * @summary List opportunities with filters
+ * @summary List opportunities with optional filters
  */
 export const getListOpportunitiesUrl = (params?: ListOpportunitiesParams) => {
   const normalizedParams = new URLSearchParams();
@@ -1571,7 +1568,7 @@ export type ListOpportunitiesQueryResult = NonNullable<
 export type ListOpportunitiesQueryError = ErrorType<unknown>;
 
 /**
- * @summary List opportunities with filters
+ * @summary List opportunities with optional filters
  */
 
 export function useListOpportunities<
@@ -1684,9 +1681,9 @@ export const useCreateOpportunity = <
 };
 
 /**
- * @summary List ingestion sync run history
+ * @summary Get paginated sync run history
  */
-export const getListSyncRunsUrl = (params?: ListSyncRunsParams) => {
+export const getGetSyncLogUrl = (params?: GetSyncLogParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1702,28 +1699,28 @@ export const getListSyncRunsUrl = (params?: ListSyncRunsParams) => {
     : `/api/opportunities/sync-log`;
 };
 
-export const listSyncRuns = async (
-  params?: ListSyncRunsParams,
+export const getSyncLog = async (
+  params?: GetSyncLogParams,
   options?: RequestInit,
-): Promise<ListSyncRuns200> => {
-  return customFetch<ListSyncRuns200>(getListSyncRunsUrl(params), {
+): Promise<GetSyncLog200> => {
+  return customFetch<GetSyncLog200>(getGetSyncLogUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListSyncRunsQueryKey = (params?: ListSyncRunsParams) => {
+export const getGetSyncLogQueryKey = (params?: GetSyncLogParams) => {
   return [`/api/opportunities/sync-log`, ...(params ? [params] : [])] as const;
 };
 
-export const getListSyncRunsQueryOptions = <
-  TData = Awaited<ReturnType<typeof listSyncRuns>>,
+export const getGetSyncLogQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSyncLog>>,
   TError = ErrorType<unknown>,
 >(
-  params?: ListSyncRunsParams,
+  params?: GetSyncLogParams,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof listSyncRuns>>,
+      Awaited<ReturnType<typeof getSyncLog>>,
       TError,
       TData
     >;
@@ -1732,43 +1729,43 @@ export const getListSyncRunsQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListSyncRunsQueryKey(params);
+  const queryKey = queryOptions?.queryKey ?? getGetSyncLogQueryKey(params);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listSyncRuns>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSyncLog>>> = ({
     signal,
-  }) => listSyncRuns(params, { signal, ...requestOptions });
+  }) => getSyncLog(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listSyncRuns>>,
+    Awaited<ReturnType<typeof getSyncLog>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type ListSyncRunsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listSyncRuns>>
+export type GetSyncLogQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSyncLog>>
 >;
-export type ListSyncRunsQueryError = ErrorType<unknown>;
+export type GetSyncLogQueryError = ErrorType<unknown>;
 
 /**
- * @summary List ingestion sync run history
+ * @summary Get paginated sync run history
  */
 
-export function useListSyncRuns<
-  TData = Awaited<ReturnType<typeof listSyncRuns>>,
+export function useGetSyncLog<
+  TData = Awaited<ReturnType<typeof getSyncLog>>,
   TError = ErrorType<unknown>,
 >(
-  params?: ListSyncRunsParams,
+  params?: GetSyncLogParams,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof listSyncRuns>>,
+      Awaited<ReturnType<typeof getSyncLog>>,
       TError,
       TData
     >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListSyncRunsQueryOptions(params, options);
+  const queryOptions = getGetSyncLogQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -1778,17 +1775,17 @@ export function useListSyncRuns<
 }
 
 /**
- * @summary Ingest an inbound email as an opportunity
+ * @summary Ingest a parsed email as an opportunity
  */
-export const getIngestEmailUrl = () => {
+export const getEmailIngestOpportunityUrl = () => {
   return `/api/opportunities/email-ingest`;
 };
 
-export const ingestEmail = async (
+export const emailIngestOpportunity = async (
   emailIngestBody: EmailIngestBody,
   options?: RequestInit,
-): Promise<IngestEmail201> => {
-  return customFetch<IngestEmail201>(getIngestEmailUrl(), {
+): Promise<Opportunity> => {
+  return customFetch<Opportunity>(getEmailIngestOpportunityUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
@@ -1796,24 +1793,24 @@ export const ingestEmail = async (
   });
 };
 
-export const getIngestEmailMutationOptions = <
+export const getEmailIngestOpportunityMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof ingestEmail>>,
+    Awaited<ReturnType<typeof emailIngestOpportunity>>,
     TError,
     { data: BodyType<EmailIngestBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof ingestEmail>>,
+  Awaited<ReturnType<typeof emailIngestOpportunity>>,
   TError,
   { data: BodyType<EmailIngestBody> },
   TContext
 > => {
-  const mutationKey = ["ingestEmail"];
+  const mutationKey = ["emailIngestOpportunity"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -1823,44 +1820,44 @@ export const getIngestEmailMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof ingestEmail>>,
+    Awaited<ReturnType<typeof emailIngestOpportunity>>,
     { data: BodyType<EmailIngestBody> }
   > = (props) => {
     const { data } = props ?? {};
 
-    return ingestEmail(data, requestOptions);
+    return emailIngestOpportunity(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type IngestEmailMutationResult = NonNullable<
-  Awaited<ReturnType<typeof ingestEmail>>
+export type EmailIngestOpportunityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof emailIngestOpportunity>>
 >;
-export type IngestEmailMutationBody = BodyType<EmailIngestBody>;
-export type IngestEmailMutationError = ErrorType<unknown>;
+export type EmailIngestOpportunityMutationBody = BodyType<EmailIngestBody>;
+export type EmailIngestOpportunityMutationError = ErrorType<unknown>;
 
 /**
- * @summary Ingest an inbound email as an opportunity
+ * @summary Ingest a parsed email as an opportunity
  */
-export const useIngestEmail = <
+export const useEmailIngestOpportunity = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof ingestEmail>>,
+    Awaited<ReturnType<typeof emailIngestOpportunity>>,
     TError,
     { data: BodyType<EmailIngestBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof ingestEmail>>,
+  Awaited<ReturnType<typeof emailIngestOpportunity>>,
   TError,
   { data: BodyType<EmailIngestBody> },
   TContext
 > => {
-  return useMutation(getIngestEmailMutationOptions(options));
+  return useMutation(getEmailIngestOpportunityMutationOptions(options));
 };
 
 /**
@@ -2030,14 +2027,14 @@ export const useCreateOpportunitySource = <
 };
 
 /**
- * @summary Get an opportunity source
+ * @summary Get a source by ID
  */
-export const getGetOpportunitySourceUrl = (id: string) => {
+export const getGetOpportunitySourceUrl = (id: number) => {
   return `/api/opportunities/sources/${id}`;
 };
 
 export const getOpportunitySource = async (
-  id: string,
+  id: number,
   options?: RequestInit,
 ): Promise<OpportunitySource> => {
   return customFetch<OpportunitySource>(getGetOpportunitySourceUrl(id), {
@@ -2046,7 +2043,7 @@ export const getOpportunitySource = async (
   });
 };
 
-export const getGetOpportunitySourceQueryKey = (id: string) => {
+export const getGetOpportunitySourceQueryKey = (id: number) => {
   return [`/api/opportunities/sources/${id}`] as const;
 };
 
@@ -2054,7 +2051,7 @@ export const getGetOpportunitySourceQueryOptions = <
   TData = Awaited<ReturnType<typeof getOpportunitySource>>,
   TError = ErrorType<Error>,
 >(
-  id: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getOpportunitySource>>,
@@ -2091,14 +2088,14 @@ export type GetOpportunitySourceQueryResult = NonNullable<
 export type GetOpportunitySourceQueryError = ErrorType<Error>;
 
 /**
- * @summary Get an opportunity source
+ * @summary Get a source by ID
  */
 
 export function useGetOpportunitySource<
   TData = Awaited<ReturnType<typeof getOpportunitySource>>,
   TError = ErrorType<Error>,
 >(
-  id: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getOpportunitySource>>,
@@ -2118,22 +2115,22 @@ export function useGetOpportunitySource<
 }
 
 /**
- * @summary Update an opportunity source
+ * @summary Update a source
  */
-export const getUpdateOpportunitySourceUrl = (id: string) => {
+export const getUpdateOpportunitySourceUrl = (id: number) => {
   return `/api/opportunities/sources/${id}`;
 };
 
 export const updateOpportunitySource = async (
-  id: string,
-  updateOpportunitySourceBody: UpdateOpportunitySourceBody,
+  id: number,
+  createOpportunitySourceBody: CreateOpportunitySourceBody,
   options?: RequestInit,
 ): Promise<OpportunitySource> => {
   return customFetch<OpportunitySource>(getUpdateOpportunitySourceUrl(id), {
     ...options,
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(updateOpportunitySourceBody),
+    body: JSON.stringify(createOpportunitySourceBody),
   });
 };
 
@@ -2144,14 +2141,14 @@ export const getUpdateOpportunitySourceMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateOpportunitySource>>,
     TError,
-    { id: string; data: BodyType<UpdateOpportunitySourceBody> },
+    { id: number; data: BodyType<CreateOpportunitySourceBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateOpportunitySource>>,
   TError,
-  { id: string; data: BodyType<UpdateOpportunitySourceBody> },
+  { id: number; data: BodyType<CreateOpportunitySourceBody> },
   TContext
 > => {
   const mutationKey = ["updateOpportunitySource"];
@@ -2165,7 +2162,7 @@ export const getUpdateOpportunitySourceMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateOpportunitySource>>,
-    { id: string; data: BodyType<UpdateOpportunitySourceBody> }
+    { id: number; data: BodyType<CreateOpportunitySourceBody> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -2179,11 +2176,11 @@ export type UpdateOpportunitySourceMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateOpportunitySource>>
 >;
 export type UpdateOpportunitySourceMutationBody =
-  BodyType<UpdateOpportunitySourceBody>;
+  BodyType<CreateOpportunitySourceBody>;
 export type UpdateOpportunitySourceMutationError = ErrorType<unknown>;
 
 /**
- * @summary Update an opportunity source
+ * @summary Update a source
  */
 export const useUpdateOpportunitySource = <
   TError = ErrorType<unknown>,
@@ -2192,28 +2189,28 @@ export const useUpdateOpportunitySource = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateOpportunitySource>>,
     TError,
-    { id: string; data: BodyType<UpdateOpportunitySourceBody> },
+    { id: number; data: BodyType<CreateOpportunitySourceBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof updateOpportunitySource>>,
   TError,
-  { id: string; data: BodyType<UpdateOpportunitySourceBody> },
+  { id: number; data: BodyType<CreateOpportunitySourceBody> },
   TContext
 > => {
   return useMutation(getUpdateOpportunitySourceMutationOptions(options));
 };
 
 /**
- * @summary Delete an opportunity source
+ * @summary Delete a source
  */
-export const getDeleteOpportunitySourceUrl = (id: string) => {
+export const getDeleteOpportunitySourceUrl = (id: number) => {
   return `/api/opportunities/sources/${id}`;
 };
 
 export const deleteOpportunitySource = async (
-  id: string,
+  id: number,
   options?: RequestInit,
 ): Promise<void> => {
   return customFetch<void>(getDeleteOpportunitySourceUrl(id), {
@@ -2229,14 +2226,14 @@ export const getDeleteOpportunitySourceMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOpportunitySource>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteOpportunitySource>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
   const mutationKey = ["deleteOpportunitySource"];
@@ -2250,7 +2247,7 @@ export const getDeleteOpportunitySourceMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteOpportunitySource>>,
-    { id: string }
+    { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
@@ -2267,7 +2264,7 @@ export type DeleteOpportunitySourceMutationResult = NonNullable<
 export type DeleteOpportunitySourceMutationError = ErrorType<unknown>;
 
 /**
- * @summary Delete an opportunity source
+ * @summary Delete a source
  */
 export const useDeleteOpportunitySource = <
   TError = ErrorType<unknown>,
@@ -2276,14 +2273,14 @@ export const useDeleteOpportunitySource = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOpportunitySource>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof deleteOpportunitySource>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
   return useMutation(getDeleteOpportunitySourceMutationOptions(options));
@@ -2292,38 +2289,38 @@ export const useDeleteOpportunitySource = <
 /**
  * @summary Trigger a manual sync for a source
  */
-export const getTriggerSourceSyncUrl = (id: string) => {
+export const getSyncOpportunitySourceUrl = (id: number) => {
   return `/api/opportunities/sources/${id}/sync`;
 };
 
-export const triggerSourceSync = async (
-  id: string,
+export const syncOpportunitySource = async (
+  id: number,
   options?: RequestInit,
 ): Promise<SyncResult> => {
-  return customFetch<SyncResult>(getTriggerSourceSyncUrl(id), {
+  return customFetch<SyncResult>(getSyncOpportunitySourceUrl(id), {
     ...options,
     method: "POST",
   });
 };
 
-export const getTriggerSourceSyncMutationOptions = <
+export const getSyncOpportunitySourceMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof triggerSourceSync>>,
+    Awaited<ReturnType<typeof syncOpportunitySource>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof triggerSourceSync>>,
+  Awaited<ReturnType<typeof syncOpportunitySource>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
-  const mutationKey = ["triggerSourceSync"];
+  const mutationKey = ["syncOpportunitySource"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -2333,44 +2330,44 @@ export const getTriggerSourceSyncMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof triggerSourceSync>>,
-    { id: string }
+    Awaited<ReturnType<typeof syncOpportunitySource>>,
+    { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
-    return triggerSourceSync(id, requestOptions);
+    return syncOpportunitySource(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type TriggerSourceSyncMutationResult = NonNullable<
-  Awaited<ReturnType<typeof triggerSourceSync>>
+export type SyncOpportunitySourceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof syncOpportunitySource>>
 >;
 
-export type TriggerSourceSyncMutationError = ErrorType<unknown>;
+export type SyncOpportunitySourceMutationError = ErrorType<unknown>;
 
 /**
  * @summary Trigger a manual sync for a source
  */
-export const useTriggerSourceSync = <
+export const useSyncOpportunitySource = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof triggerSourceSync>>,
+    Awaited<ReturnType<typeof syncOpportunitySource>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof triggerSourceSync>>,
+  Awaited<ReturnType<typeof syncOpportunitySource>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
-  return useMutation(getTriggerSourceSyncMutationOptions(options));
+  return useMutation(getSyncOpportunitySourceMutationOptions(options));
 };
 
 /**
@@ -2536,14 +2533,14 @@ export const useCreateOpportunityRule = <
 };
 
 /**
- * @summary Get a scoring rule
+ * @summary Get a rule by ID
  */
-export const getGetOpportunityRuleUrl = (id: string) => {
+export const getGetOpportunityRuleUrl = (id: number) => {
   return `/api/opportunities/rules/${id}`;
 };
 
 export const getOpportunityRule = async (
-  id: string,
+  id: number,
   options?: RequestInit,
 ): Promise<OpportunityRule> => {
   return customFetch<OpportunityRule>(getGetOpportunityRuleUrl(id), {
@@ -2552,15 +2549,15 @@ export const getOpportunityRule = async (
   });
 };
 
-export const getGetOpportunityRuleQueryKey = (id: string) => {
+export const getGetOpportunityRuleQueryKey = (id: number) => {
   return [`/api/opportunities/rules/${id}`] as const;
 };
 
 export const getGetOpportunityRuleQueryOptions = <
   TData = Awaited<ReturnType<typeof getOpportunityRule>>,
-  TError = ErrorType<Error>,
+  TError = ErrorType<unknown>,
 >(
-  id: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getOpportunityRule>>,
@@ -2593,17 +2590,17 @@ export const getGetOpportunityRuleQueryOptions = <
 export type GetOpportunityRuleQueryResult = NonNullable<
   Awaited<ReturnType<typeof getOpportunityRule>>
 >;
-export type GetOpportunityRuleQueryError = ErrorType<Error>;
+export type GetOpportunityRuleQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get a scoring rule
+ * @summary Get a rule by ID
  */
 
 export function useGetOpportunityRule<
   TData = Awaited<ReturnType<typeof getOpportunityRule>>,
-  TError = ErrorType<Error>,
+  TError = ErrorType<unknown>,
 >(
-  id: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getOpportunityRule>>,
@@ -2625,20 +2622,20 @@ export function useGetOpportunityRule<
 /**
  * @summary Update a scoring rule
  */
-export const getUpdateOpportunityRuleUrl = (id: string) => {
+export const getUpdateOpportunityRuleUrl = (id: number) => {
   return `/api/opportunities/rules/${id}`;
 };
 
 export const updateOpportunityRule = async (
-  id: string,
-  updateOpportunityRuleBody: UpdateOpportunityRuleBody,
+  id: number,
+  createOpportunityRuleBody: CreateOpportunityRuleBody,
   options?: RequestInit,
 ): Promise<OpportunityRule> => {
   return customFetch<OpportunityRule>(getUpdateOpportunityRuleUrl(id), {
     ...options,
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(updateOpportunityRuleBody),
+    body: JSON.stringify(createOpportunityRuleBody),
   });
 };
 
@@ -2649,14 +2646,14 @@ export const getUpdateOpportunityRuleMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateOpportunityRule>>,
     TError,
-    { id: string; data: BodyType<UpdateOpportunityRuleBody> },
+    { id: number; data: BodyType<CreateOpportunityRuleBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateOpportunityRule>>,
   TError,
-  { id: string; data: BodyType<UpdateOpportunityRuleBody> },
+  { id: number; data: BodyType<CreateOpportunityRuleBody> },
   TContext
 > => {
   const mutationKey = ["updateOpportunityRule"];
@@ -2670,7 +2667,7 @@ export const getUpdateOpportunityRuleMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateOpportunityRule>>,
-    { id: string; data: BodyType<UpdateOpportunityRuleBody> }
+    { id: number; data: BodyType<CreateOpportunityRuleBody> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -2684,7 +2681,7 @@ export type UpdateOpportunityRuleMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateOpportunityRule>>
 >;
 export type UpdateOpportunityRuleMutationBody =
-  BodyType<UpdateOpportunityRuleBody>;
+  BodyType<CreateOpportunityRuleBody>;
 export type UpdateOpportunityRuleMutationError = ErrorType<unknown>;
 
 /**
@@ -2697,28 +2694,28 @@ export const useUpdateOpportunityRule = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateOpportunityRule>>,
     TError,
-    { id: string; data: BodyType<UpdateOpportunityRuleBody> },
+    { id: number; data: BodyType<CreateOpportunityRuleBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof updateOpportunityRule>>,
   TError,
-  { id: string; data: BodyType<UpdateOpportunityRuleBody> },
+  { id: number; data: BodyType<CreateOpportunityRuleBody> },
   TContext
 > => {
   return useMutation(getUpdateOpportunityRuleMutationOptions(options));
 };
 
 /**
- * @summary Delete a scoring rule
+ * @summary Delete a rule
  */
-export const getDeleteOpportunityRuleUrl = (id: string) => {
+export const getDeleteOpportunityRuleUrl = (id: number) => {
   return `/api/opportunities/rules/${id}`;
 };
 
 export const deleteOpportunityRule = async (
-  id: string,
+  id: number,
   options?: RequestInit,
 ): Promise<void> => {
   return customFetch<void>(getDeleteOpportunityRuleUrl(id), {
@@ -2734,14 +2731,14 @@ export const getDeleteOpportunityRuleMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOpportunityRule>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteOpportunityRule>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
   const mutationKey = ["deleteOpportunityRule"];
@@ -2755,7 +2752,7 @@ export const getDeleteOpportunityRuleMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteOpportunityRule>>,
-    { id: string }
+    { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
@@ -2772,7 +2769,7 @@ export type DeleteOpportunityRuleMutationResult = NonNullable<
 export type DeleteOpportunityRuleMutationError = ErrorType<unknown>;
 
 /**
- * @summary Delete a scoring rule
+ * @summary Delete a rule
  */
 export const useDeleteOpportunityRule = <
   TError = ErrorType<unknown>,
@@ -2781,28 +2778,28 @@ export const useDeleteOpportunityRule = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOpportunityRule>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof deleteOpportunityRule>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
   return useMutation(getDeleteOpportunityRuleMutationOptions(options));
 };
 
 /**
- * @summary Get opportunity detail with events
+ * @summary Get opportunity details with events
  */
-export const getGetOpportunityUrl = (id: string) => {
+export const getGetOpportunityUrl = (id: number) => {
   return `/api/opportunities/${id}`;
 };
 
 export const getOpportunity = async (
-  id: string,
+  id: number,
   options?: RequestInit,
 ): Promise<OpportunityDetail> => {
   return customFetch<OpportunityDetail>(getGetOpportunityUrl(id), {
@@ -2811,7 +2808,7 @@ export const getOpportunity = async (
   });
 };
 
-export const getGetOpportunityQueryKey = (id: string) => {
+export const getGetOpportunityQueryKey = (id: number) => {
   return [`/api/opportunities/${id}`] as const;
 };
 
@@ -2819,7 +2816,7 @@ export const getGetOpportunityQueryOptions = <
   TData = Awaited<ReturnType<typeof getOpportunity>>,
   TError = ErrorType<Error>,
 >(
-  id: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getOpportunity>>,
@@ -2855,14 +2852,14 @@ export type GetOpportunityQueryResult = NonNullable<
 export type GetOpportunityQueryError = ErrorType<Error>;
 
 /**
- * @summary Get opportunity detail with events
+ * @summary Get opportunity details with events
  */
 
 export function useGetOpportunity<
   TData = Awaited<ReturnType<typeof getOpportunity>>,
   TError = ErrorType<Error>,
 >(
-  id: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getOpportunity>>,
@@ -2882,14 +2879,14 @@ export function useGetOpportunity<
 }
 
 /**
- * @summary Update opportunity status or fields
+ * @summary Update opportunity status or notes
  */
-export const getUpdateOpportunityUrl = (id: string) => {
+export const getUpdateOpportunityUrl = (id: number) => {
   return `/api/opportunities/${id}`;
 };
 
 export const updateOpportunity = async (
-  id: string,
+  id: number,
   updateOpportunityBody: UpdateOpportunityBody,
   options?: RequestInit,
 ): Promise<Opportunity> => {
@@ -2908,14 +2905,14 @@ export const getUpdateOpportunityMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateOpportunity>>,
     TError,
-    { id: string; data: BodyType<UpdateOpportunityBody> },
+    { id: number; data: BodyType<UpdateOpportunityBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateOpportunity>>,
   TError,
-  { id: string; data: BodyType<UpdateOpportunityBody> },
+  { id: number; data: BodyType<UpdateOpportunityBody> },
   TContext
 > => {
   const mutationKey = ["updateOpportunity"];
@@ -2929,7 +2926,7 @@ export const getUpdateOpportunityMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateOpportunity>>,
-    { id: string; data: BodyType<UpdateOpportunityBody> }
+    { id: number; data: BodyType<UpdateOpportunityBody> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -2946,7 +2943,7 @@ export type UpdateOpportunityMutationBody = BodyType<UpdateOpportunityBody>;
 export type UpdateOpportunityMutationError = ErrorType<unknown>;
 
 /**
- * @summary Update opportunity status or fields
+ * @summary Update opportunity status or notes
  */
 export const useUpdateOpportunity = <
   TError = ErrorType<unknown>,
@@ -2955,14 +2952,14 @@ export const useUpdateOpportunity = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateOpportunity>>,
     TError,
-    { id: string; data: BodyType<UpdateOpportunityBody> },
+    { id: number; data: BodyType<UpdateOpportunityBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof updateOpportunity>>,
   TError,
-  { id: string; data: BodyType<UpdateOpportunityBody> },
+  { id: number; data: BodyType<UpdateOpportunityBody> },
   TContext
 > => {
   return useMutation(getUpdateOpportunityMutationOptions(options));
@@ -2971,12 +2968,12 @@ export const useUpdateOpportunity = <
 /**
  * @summary Delete an opportunity
  */
-export const getDeleteOpportunityUrl = (id: string) => {
+export const getDeleteOpportunityUrl = (id: number) => {
   return `/api/opportunities/${id}`;
 };
 
 export const deleteOpportunity = async (
-  id: string,
+  id: number,
   options?: RequestInit,
 ): Promise<void> => {
   return customFetch<void>(getDeleteOpportunityUrl(id), {
@@ -2992,14 +2989,14 @@ export const getDeleteOpportunityMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOpportunity>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteOpportunity>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
   const mutationKey = ["deleteOpportunity"];
@@ -3013,7 +3010,7 @@ export const getDeleteOpportunityMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteOpportunity>>,
-    { id: string }
+    { id: number }
   > = (props) => {
     const { id } = props ?? {};
 
@@ -3039,14 +3036,14 @@ export const useDeleteOpportunity = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOpportunity>>,
     TError,
-    { id: string },
+    { id: number },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof deleteOpportunity>>,
   TError,
-  { id: string },
+  { id: number },
   TContext
 > => {
   return useMutation(getDeleteOpportunityMutationOptions(options));
@@ -3055,12 +3052,12 @@ export const useDeleteOpportunity = <
 /**
  * @summary List events for an opportunity
  */
-export const getListOpportunityEventsUrl = (id: string) => {
+export const getListOpportunityEventsUrl = (id: number) => {
   return `/api/opportunities/${id}/events`;
 };
 
 export const listOpportunityEvents = async (
-  id: string,
+  id: number,
   options?: RequestInit,
 ): Promise<ListOpportunityEvents200> => {
   return customFetch<ListOpportunityEvents200>(
@@ -3072,7 +3069,7 @@ export const listOpportunityEvents = async (
   );
 };
 
-export const getListOpportunityEventsQueryKey = (id: string) => {
+export const getListOpportunityEventsQueryKey = (id: number) => {
   return [`/api/opportunities/${id}/events`] as const;
 };
 
@@ -3080,7 +3077,7 @@ export const getListOpportunityEventsQueryOptions = <
   TData = Awaited<ReturnType<typeof listOpportunityEvents>>,
   TError = ErrorType<unknown>,
 >(
-  id: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof listOpportunityEvents>>,
@@ -3124,7 +3121,7 @@ export function useListOpportunityEvents<
   TData = Awaited<ReturnType<typeof listOpportunityEvents>>,
   TError = ErrorType<unknown>,
 >(
-  id: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof listOpportunityEvents>>,
@@ -3144,14 +3141,14 @@ export function useListOpportunityEvents<
 }
 
 /**
- * @summary Add an event to an opportunity
+ * @summary Log an event for an opportunity
  */
-export const getCreateOpportunityEventUrl = (id: string) => {
+export const getCreateOpportunityEventUrl = (id: number) => {
   return `/api/opportunities/${id}/events`;
 };
 
 export const createOpportunityEvent = async (
-  id: string,
+  id: number,
   createOpportunityEventBody: CreateOpportunityEventBody,
   options?: RequestInit,
 ): Promise<OpportunityEvent> => {
@@ -3170,14 +3167,14 @@ export const getCreateOpportunityEventMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createOpportunityEvent>>,
     TError,
-    { id: string; data: BodyType<CreateOpportunityEventBody> },
+    { id: number; data: BodyType<CreateOpportunityEventBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createOpportunityEvent>>,
   TError,
-  { id: string; data: BodyType<CreateOpportunityEventBody> },
+  { id: number; data: BodyType<CreateOpportunityEventBody> },
   TContext
 > => {
   const mutationKey = ["createOpportunityEvent"];
@@ -3191,7 +3188,7 @@ export const getCreateOpportunityEventMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createOpportunityEvent>>,
-    { id: string; data: BodyType<CreateOpportunityEventBody> }
+    { id: number; data: BodyType<CreateOpportunityEventBody> }
   > = (props) => {
     const { id, data } = props ?? {};
 
@@ -3209,7 +3206,7 @@ export type CreateOpportunityEventMutationBody =
 export type CreateOpportunityEventMutationError = ErrorType<unknown>;
 
 /**
- * @summary Add an event to an opportunity
+ * @summary Log an event for an opportunity
  */
 export const useCreateOpportunityEvent = <
   TError = ErrorType<unknown>,
@@ -3218,14 +3215,14 @@ export const useCreateOpportunityEvent = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createOpportunityEvent>>,
     TError,
-    { id: string; data: BodyType<CreateOpportunityEventBody> },
+    { id: number; data: BodyType<CreateOpportunityEventBody> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof createOpportunityEvent>>,
   TError,
-  { id: string; data: BodyType<CreateOpportunityEventBody> },
+  { id: number; data: BodyType<CreateOpportunityEventBody> },
   TContext
 > => {
   return useMutation(getCreateOpportunityEventMutationOptions(options));

@@ -4,7 +4,6 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Prefer PGHOST (Replit Helium) over DATABASE_URL when available
 const connectionConfig =
   process.env.PGHOST && process.env.PGDATABASE
     ? {
@@ -21,6 +20,7 @@ const connectionConfig =
 
 export default defineConfig({
   schema: path.join(__dirname, "./src/schema/index.ts"),
+  out: path.join(__dirname, "./migrations"),
   dialect: "postgresql",
   dbCredentials: connectionConfig as Parameters<typeof defineConfig>[0]["dbCredentials"],
 });

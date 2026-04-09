@@ -8,16 +8,9 @@
 
 export interface CreateOpportunityRuleBody {
   name: string;
-  enabled?: boolean;
-  includeKeywords?: string[];
-  excludeKeywords?: string[];
-  states?: string[];
+  isActive?: boolean;
+  keywords?: string[];
   tradeTypes?: string[];
+  targetStates?: string[];
   minBudget?: number;
-  maxBudget?: number;
-  minScore?: number;
-  urgencyWeight?: number;
-  recencyWeight?: number;
-  budgetWeight?: number;
-  keywordWeight?: number;
 }

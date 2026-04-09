@@ -6,8 +6,6 @@ const { Pool } = pg;
 
 const isProduction = process.env.NODE_ENV === "production";
 
-// Prefer individual PG* variables when available (Replit Helium uses PGHOST=helium).
-// Fall back to DATABASE_URL for external databases (Supabase, Neon, etc.).
 function buildConnectionConfig(): pg.PoolConfig {
   if (process.env.PGHOST && process.env.PGDATABASE) {
     return {

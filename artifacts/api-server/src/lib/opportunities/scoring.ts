@@ -1,119 +1,95 @@
-import { NormalizedOpportunity, ScoreResult, ScoringContext } from "./types.js";
+import type { NormalizedOpportunity } from "./types";
+import type { OpportunityRule } from "@workspace/db";
+
+export interface ScoringContext {
+  rules: OpportunityRule[];
+}
+
+export interface ScoreResult {
+  score: number;
+  priorityLevel: "high" | "medium" | "low";
+  scoreReasons: string[];
+}
 
 const HIGH_THRESHOLD = 8;
-const MED_THRESHOLD = 4;
+const MEDIUM_THRESHOLD = 4;
 
 export function scoreOpportunity(
   opp: NormalizedOpportunity,
   ctx: ScoringContext
 ): ScoreResult {
   let score = 0;
-  const matchedTerms: string[] = [];
-  const now = new Date();
+  const reasons: string[] = [];
 
-  // keyword match +3 (weighted by keywordWeight)
-  const titleDesc = `${opp.title} ${opp.description ?? ""}`.toLowerCase();
-  const kwMatches = ctx.includeKeywords.filter((kw) =>
-    titleDesc.includes(kw.toLowerCase())
-  );
-  const keywordMatch = kwMatches.length > 0;
-  if (keywordMatch) {
-    matchedTerms.push(...kwMatches);
-    score += 3 * ctx.keywordWeight;
-  }
+  const rule = ctx.rules.find((r) => r.isActive === true);
 
-  // trade match +2
-  let matchedTrade: string | undefined;
-  const tradeMatch =
-    !!opp.tradeType &&
-    ctx.tradeTypes.length > 0 &&
-    ctx.tradeTypes.some((t) => {
-      const matches = t.toLowerCase() === opp.tradeType!.toLowerCase();
-      if (matches) matchedTrade = t;
-      return matches;
-    });
-  if (tradeMatch) score += 2;
+  if (rule) {
+    const keywords = (rule.keywords as string[]) ?? [];
+    const tradeTypes = (rule.tradeTypes as string[]) ?? [];
+    const targetStates = (rule.targetStates as string[]) ?? [];
+    const minBudget = rule.minBudget ? Number(rule.minBudget) : undefined;
 
-  // state/location match +2
-  let locationMatch: string | undefined;
-  if (opp.state && ctx.states.length > 0) {
-    const stateMatch = ctx.states.some(
-      (s) => s.toLowerCase() === opp.state!.toLowerCase()
+    const searchText = `${opp.title ?? ""} ${opp.description ?? ""}`.toLowerCase();
+
+    const matchedKeyword = keywords.find((kw) =>
+      searchText.includes(kw.toLowerCase())
     );
-    if (stateMatch) {
-      locationMatch = opp.state;
+    if (matchedKeyword) {
+      score += 3;
+      reasons.push(`keyword_match:${matchedKeyword}`);
+    }
+
+    if (opp.tradeType && tradeTypes.includes(opp.tradeType)) {
       score += 2;
+      reasons.push(`trade_match:${opp.tradeType}`);
+    }
+
+    if (opp.state && targetStates.includes(opp.state)) {
+      score += 2;
+      reasons.push(`state_match:${opp.state}`);
+    }
+
+    const budget = opp.budgetMax ?? opp.budgetMin;
+    if (minBudget !== undefined && budget !== undefined && budget >= minBudget) {
+      score += 1;
+      reasons.push(`budget_above_threshold:${budget}`);
+    }
+  } else {
+    const searchText = `${opp.title ?? ""} ${opp.description ?? ""}`.toLowerCase();
+    const defaultKeywords = ["construction", "renovation", "repair", "roofing", "hvac", "concrete", "painting"];
+    const matchedKeyword = defaultKeywords.find((kw) => searchText.includes(kw));
+    if (matchedKeyword) {
+      score += 3;
+      reasons.push(`keyword_match:${matchedKeyword}`);
     }
   }
 
-  // budget above threshold +1 (weighted by budgetWeight)
-  const budgetBonus =
-    !!ctx.minBudget &&
-    !!opp.budgetMin &&
-    opp.budgetMin >= ctx.minBudget;
-  if (budgetBonus) score += 1 * ctx.budgetWeight;
+  const now = new Date();
 
-  // posted within 7 days +1 (weighted by recencyWeight)
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const recencyBonus = !!opp.postedAt && opp.postedAt >= sevenDaysAgo;
-  if (recencyBonus) score += 1 * ctx.recencyWeight;
+  if (opp.postedAt) {
+    const daysSincePosted = (now.getTime() - opp.postedAt.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSincePosted <= 7) {
+      score += 1;
+      reasons.push("posted_within_7_days");
+    }
+  }
 
-  // deadline within 14 days +1 (weighted by urgencyWeight)
-  const fourteenDaysOut = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-  const urgencyBonus =
-    !!opp.dueAt && opp.dueAt <= fourteenDaysOut && opp.dueAt >= now;
-  if (urgencyBonus) score += 1 * ctx.urgencyWeight;
+  if (opp.deadlineAt) {
+    const daysUntilDeadline = (opp.deadlineAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysUntilDeadline >= 0 && daysUntilDeadline <= 14) {
+      score += 1;
+      reasons.push("deadline_within_14_days");
+    }
+  }
 
-  const finalScore = Math.round(score * 100) / 100;
+  let priorityLevel: "high" | "medium" | "low";
+  if (score >= HIGH_THRESHOLD) {
+    priorityLevel = "high";
+  } else if (score >= MEDIUM_THRESHOLD) {
+    priorityLevel = "medium";
+  } else {
+    priorityLevel = "low";
+  }
 
-  const priorityLevel: "high" | "medium" | "low" =
-    finalScore >= HIGH_THRESHOLD
-      ? "high"
-      : finalScore >= MED_THRESHOLD
-      ? "medium"
-      : "low";
-
-  return {
-    score: finalScore,
-    priorityLevel,
-    reasons: {
-      keywordMatch,
-      matchedTerms,
-      tradeMatch,
-      matchedTrade,
-      locationMatch,
-      recencyBonus,
-      urgencyBonus,
-      budgetBonus,
-    },
-  };
-}
-
-export function defaultScoringContext(): ScoringContext {
-  return {
-    includeKeywords: [
-      "roofing",
-      "roof",
-      "hvac",
-      "concrete",
-      "painting",
-      "paint",
-      "construction",
-      "maintenance",
-      "renovation",
-      "repair",
-      "contractor",
-      "bid",
-      "rfp",
-      "rfq",
-    ],
-    excludeKeywords: [],
-    states: ["OH", "Ohio", "PA", "Pennsylvania", "IN", "Indiana", "KY", "Kentucky", "MI", "Michigan"],
-    tradeTypes: ["roofing", "hvac", "concrete", "painting", "general contracting", "maintenance"],
-    minBudget: 5000,
-    urgencyWeight: 1,
-    recencyWeight: 1,
-    budgetWeight: 1,
-    keywordWeight: 1,
-  };
+  return { score, priorityLevel, scoreReasons: reasons };
 }

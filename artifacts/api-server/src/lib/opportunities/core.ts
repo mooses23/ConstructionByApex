@@ -1,139 +1,113 @@
-import { eq, and } from "drizzle-orm";
-import {
-  db,
-  opportunitiesTable,
-  opportunitySourcesTable,
-  opportunitySyncRunsTable,
-  opportunityRulesTable,
-  opportunityEventsTable,
-  type InsertOpportunity,
-} from "@workspace/db";
-import { NormalizedOpportunity, SyncRunResult } from "./types.js";
-import { scoreOpportunity, defaultScoringContext } from "./scoring.js";
+import { db, opportunitiesTable, opportunitySyncRunsTable, opportunityRulesTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
+import type { NormalizedOpportunity, SyncRunResult } from "./types";
+import { scoreOpportunity } from "./scoring";
 
-function buildScoringContextFromRules(
-  rules: (typeof opportunityRulesTable.$inferSelect)[]
-) {
-  const active = rules.filter((r) => r.enabled);
-  if (active.length === 0) return defaultScoringContext();
-
-  // merge all active rules
-  const r = active[0];
-  return {
-    includeKeywords: active.flatMap((r) => r.includeKeywords ?? []),
-    excludeKeywords: active.flatMap((r) => r.excludeKeywords ?? []),
-    states: active.flatMap((r) => r.states ?? []),
-    tradeTypes: active.flatMap((r) => r.tradeTypes ?? []),
-    minBudget: r.minBudget ? Number(r.minBudget) : undefined,
-    urgencyWeight: Number(r.urgencyWeight ?? 1),
-    recencyWeight: Number(r.recencyWeight ?? 1),
-    budgetWeight: Number(r.budgetWeight ?? 1),
-    keywordWeight: Number(r.keywordWeight ?? 1),
-  };
+function titleSimilarity(a: string, b: string): number {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+  const wordsA = new Set(normalize(a).split(/\s+/).filter(Boolean));
+  const wordsB = new Set(normalize(b).split(/\s+/).filter(Boolean));
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  const intersection = [...wordsA].filter((w) => wordsB.has(w)).length;
+  const union = new Set([...wordsA, ...wordsB]).size;
+  return intersection / union;
 }
 
-export async function saveOpportunity(
-  sourceId: string | undefined,
-  normalized: NormalizedOpportunity
-): Promise<{ inserted: boolean; updated: boolean }> {
-  // Load active rules for scoring
-  const rules = await db.select().from(opportunityRulesTable);
-  const ctx = buildScoringContextFromRules(rules);
-  const { score, priorityLevel, reasons } = scoreOpportunity(normalized, ctx);
+export async function normalizeOpportunity(raw: NormalizedOpportunity): Promise<NormalizedOpportunity> {
+  return raw;
+}
 
-  // Dedupe by source_id + external_id
-  if (sourceId && normalized.externalId) {
+export async function saveOpportunity(opp: NormalizedOpportunity): Promise<{ inserted: boolean; id: number }> {
+  const rules = await db.select().from(opportunityRulesTable).where(eq(opportunityRulesTable.isActive, true));
+
+  const scored = scoreOpportunity(opp, { rules });
+
+  if (opp.sourceId && opp.externalId) {
     const existing = await db
-      .select({ id: opportunitiesTable.id })
+      .select()
       .from(opportunitiesTable)
       .where(
         and(
-          eq(opportunitiesTable.sourceId, sourceId),
-          eq(opportunitiesTable.externalId, normalized.externalId)
+          eq(opportunitiesTable.sourceId, opp.sourceId),
+          eq(opportunitiesTable.externalId, opp.externalId)
         )
       )
       .limit(1);
 
     if (existing.length > 0) {
-      await db
+      const [updated] = await db
         .update(opportunitiesTable)
         .set({
-          title: normalized.title,
-          description: normalized.description,
-          score: String(score),
-          priorityLevel,
-          scoreReasonsJson: reasons as Record<string, unknown>,
+          title: opp.title,
+          description: opp.description,
+          score: scored.score,
+          priorityLevel: scored.priorityLevel,
+          scoreReasonsJson: scored.scoreReasons,
+          rawPayloadJson: opp.rawPayloadJson,
           updatedAt: new Date(),
         })
-        .where(eq(opportunitiesTable.id, existing[0].id));
-      return { inserted: false, updated: true };
+        .where(eq(opportunitiesTable.id, existing[0].id))
+        .returning();
+      return { inserted: false, id: updated.id };
     }
   }
 
-  const values: InsertOpportunity = {
-    sourceId: sourceId ?? null,
-    externalId: normalized.externalId,
-    title: normalized.title,
-    description: normalized.description,
-    category: normalized.category,
-    tradeType: normalized.tradeType,
-    city: normalized.city,
-    state: normalized.state,
-    budgetMin: normalized.budgetMin != null ? String(normalized.budgetMin) : null,
-    budgetMax: normalized.budgetMax != null ? String(normalized.budgetMax) : null,
-    postedAt: normalized.postedAt ?? null,
-    dueAt: normalized.dueAt ?? null,
-    sourceUrl: normalized.sourceUrl,
-    sourceName: normalized.sourceName,
-    ingestionType: normalized.ingestionType,
-    score: String(score),
-    priorityLevel,
-    scoreReasonsJson: reasons as Record<string, unknown>,
-    rawPayloadJson: normalized.rawPayload as Record<string, unknown>,
-    status: "new",
-    reviewed: false,
-    convertedToLead: false,
-  };
+  const recentOpps = await db
+    .select({ id: opportunitiesTable.id, title: opportunitiesTable.title })
+    .from(opportunitiesTable)
+    .limit(500);
 
-  await db.insert(opportunitiesTable).values(values);
-  return { inserted: true, updated: false };
+  const SIMILARITY_THRESHOLD = 0.8;
+  const duplicate = recentOpps.find(
+    (r) => titleSimilarity(r.title, opp.title) >= SIMILARITY_THRESHOLD
+  );
+
+  if (duplicate) {
+    return { inserted: false, id: duplicate.id };
+  }
+
+  const [inserted] = await db
+    .insert(opportunitiesTable)
+    .values({
+      sourceId: opp.sourceId,
+      externalId: opp.externalId,
+      title: opp.title,
+      description: opp.description,
+      tradeType: opp.tradeType,
+      status: opp.status ?? "new",
+      priorityLevel: scored.priorityLevel,
+      score: scored.score,
+      scoreReasonsJson: scored.scoreReasons,
+      budgetMin: opp.budgetMin?.toString(),
+      budgetMax: opp.budgetMax?.toString(),
+      state: opp.state,
+      city: opp.city,
+      contactName: opp.contactName,
+      contactEmail: opp.contactEmail,
+      contactPhone: opp.contactPhone,
+      sourceUrl: opp.sourceUrl,
+      postedAt: opp.postedAt,
+      deadlineAt: opp.deadlineAt,
+      rawPayloadJson: opp.rawPayloadJson,
+      ingestMethod: opp.ingestMethod,
+      notes: opp.notes,
+    })
+    .returning();
+
+  return { inserted: true, id: inserted.id };
 }
 
 export async function recordSyncRun(
-  sourceId: string,
-  result: SyncRunResult,
-  startedAt: Date
+  sourceId: number | null,
+  result: SyncRunResult & { startedAt?: Date }
 ): Promise<void> {
-  const finishedAt = new Date();
-
   await db.insert(opportunitySyncRunsTable).values({
-    sourceId,
-    startedAt,
-    finishedAt,
-    status: result.error ? "error" : "success",
-    itemsFetched: result.itemsFetched,
-    itemsInserted: result.itemsInserted,
-    itemsUpdated: result.itemsUpdated,
-    errorText: result.error ?? null,
-  });
-
-  await db
-    .update(opportunitySourcesTable)
-    .set({
-      lastSyncAt: finishedAt,
-      lastError: result.error ?? null,
-    })
-    .where(eq(opportunitySourcesTable.id, sourceId));
-}
-
-export async function addEvent(
-  opportunityId: string,
-  eventType: string,
-  eventNote?: string
-): Promise<void> {
-  await db.insert(opportunityEventsTable).values({
-    opportunityId,
-    eventType,
-    eventNote: eventNote ?? null,
+    sourceId: sourceId ?? undefined,
+    status: result.errorMessage ? "error" : "completed",
+    recordsFetched: result.recordsFetched,
+    recordsInserted: result.recordsInserted,
+    recordsSkipped: result.recordsSkipped,
+    errorMessage: result.errorMessage,
+    completedAt: new Date(),
   });
 }

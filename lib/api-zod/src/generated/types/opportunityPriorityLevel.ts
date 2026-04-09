@@ -7,8 +7,7 @@
  */
 
 export type OpportunityPriorityLevel =
-  | (typeof OpportunityPriorityLevel)[keyof typeof OpportunityPriorityLevel]
-  | null;
+  (typeof OpportunityPriorityLevel)[keyof typeof OpportunityPriorityLevel];
 
 export const OpportunityPriorityLevel = {
   high: "high",

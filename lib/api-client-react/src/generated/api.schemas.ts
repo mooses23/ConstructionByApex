@@ -145,6 +145,7 @@ export interface DashboardStats {
   wonLeads: number;
   lostLeads: number;
   thisMonthLeads: number;
+  wonThisMonth: number;
   conversionRate: number;
 }
 
@@ -238,8 +239,7 @@ export interface UpdateQuoteBody {
 }
 
 export type OpportunityPriorityLevel =
-  | (typeof OpportunityPriorityLevel)[keyof typeof OpportunityPriorityLevel]
-  | null;
+  (typeof OpportunityPriorityLevel)[keyof typeof OpportunityPriorityLevel];
 
 export const OpportunityPriorityLevel = {
   high: "high",
@@ -247,52 +247,41 @@ export const OpportunityPriorityLevel = {
   low: "low",
 } as const;
 
-export type OpportunityScoreReasonsJson = { [key: string]: unknown } | null;
-
-export type OpportunityStatus =
-  (typeof OpportunityStatus)[keyof typeof OpportunityStatus];
-
-export const OpportunityStatus = {
-  new: "new",
-  saved: "saved",
-  dismissed: "dismissed",
-  converted: "converted",
-} as const;
-
 export interface Opportunity {
-  id: string;
-  sourceId?: string | null;
+  id: number;
+  sourceId?: number | null;
   externalId?: string | null;
   title: string;
   description?: string | null;
-  category?: string | null;
   tradeType?: string | null;
-  city?: string | null;
-  state?: string | null;
+  status: string;
+  priorityLevel: OpportunityPriorityLevel;
+  score: number;
+  scoreReasonsJson: string[];
   budgetMin?: number | null;
   budgetMax?: number | null;
-  estimatedValue?: number | null;
-  postedAt?: string | null;
-  dueAt?: string | null;
+  state?: string | null;
+  city?: string | null;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
   sourceUrl?: string | null;
-  sourceName?: string | null;
-  ingestionType?: string | null;
-  score: number;
-  priorityLevel?: OpportunityPriorityLevel;
-  relevanceReason?: string | null;
-  scoreReasonsJson?: OpportunityScoreReasonsJson;
-  status: OpportunityStatus;
-  reviewed: boolean;
-  convertedToLead: boolean;
+  postedAt?: string | null;
+  deadlineAt?: string | null;
+  ingestMethod: string;
+  notes?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+export type OpportunityEventMetadata = { [key: string]: unknown };
+
 export interface OpportunityEvent {
-  id: string;
-  opportunityId: string;
+  id: number;
+  opportunityId: number;
   eventType: string;
-  eventNote?: string | null;
+  note?: string | null;
+  metadata: OpportunityEventMetadata;
   createdAt: string;
 }
 
@@ -300,90 +289,71 @@ export type OpportunityDetail = Opportunity & {
   events: OpportunityEvent[];
 };
 
-export type OpportunitySourceConfigJson = { [key: string]: unknown } | null;
+export type OpportunitySourceSourceType =
+  (typeof OpportunitySourceSourceType)[keyof typeof OpportunitySourceSourceType];
+
+export const OpportunitySourceSourceType = {
+  samgov: "samgov",
+  rss: "rss",
+  google_pse: "google_pse",
+  manual: "manual",
+  email: "email",
+} as const;
+
+export type OpportunitySourceConfig = { [key: string]: unknown };
 
 export interface OpportunitySource {
-  id: string;
-  key: string;
+  id: number;
   name: string;
-  ingestionType: string;
-  enabled: boolean;
-  configJson?: OpportunitySourceConfigJson;
-  pollIntervalMinutes?: number | null;
+  sourceType: OpportunitySourceSourceType;
+  config: OpportunitySourceConfig;
+  isActive: boolean;
   lastSyncAt?: string | null;
-  lastError?: string | null;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface OpportunitySyncRun {
+  id: number;
+  sourceId?: number | null;
+  status: string;
+  recordsFetched: number;
+  recordsInserted: number;
+  recordsSkipped: number;
+  errorMessage?: string | null;
+  startedAt: string;
+  completedAt?: string | null;
 }
 
 export interface OpportunityRule {
-  id: string;
+  id: number;
   name: string;
-  enabled: boolean;
-  includeKeywords?: string[] | null;
-  excludeKeywords?: string[] | null;
-  states?: string[] | null;
-  tradeTypes?: string[] | null;
+  isActive: boolean;
+  keywords: string[];
+  tradeTypes: string[];
+  targetStates: string[];
   minBudget?: number | null;
-  maxBudget?: number | null;
-  minScore?: number | null;
-  urgencyWeight: number;
-  recencyWeight: number;
-  budgetWeight: number;
-  keywordWeight: number;
   createdAt: string;
-}
-
-export type SyncRunStatus = (typeof SyncRunStatus)[keyof typeof SyncRunStatus];
-
-export const SyncRunStatus = {
-  running: "running",
-  success: "success",
-  error: "error",
-} as const;
-
-export interface SyncRun {
-  id: string;
-  sourceId?: string | null;
-  sourceName: string;
-  startedAt: string;
-  finishedAt?: string | null;
-  status: SyncRunStatus;
-  itemsFetched?: number | null;
-  itemsInserted?: number | null;
-  itemsUpdated?: number | null;
-  errorText?: string | null;
-  createdAt: string;
-}
-
-export interface SyncResult {
-  itemsFetched: number;
-  itemsInserted: number;
-  itemsUpdated: number;
-  error?: string | null;
+  updatedAt: string;
 }
 
 export interface CreateOpportunityBody {
   title: string;
   description?: string;
   tradeType?: string;
-  category?: string;
-  city?: string;
-  state?: string;
   budgetMin?: number;
   budgetMax?: number;
-  dueAt?: string;
+  state?: string;
+  city?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   sourceUrl?: string;
+  postedAt?: string;
+  deadlineAt?: string;
+  notes?: string;
+  sourceId?: number;
 }
-
-export type UpdateOpportunityBodyStatus =
-  (typeof UpdateOpportunityBodyStatus)[keyof typeof UpdateOpportunityBodyStatus];
-
-export const UpdateOpportunityBodyStatus = {
-  new: "new",
-  saved: "saved",
-  dismissed: "dismissed",
-  converted: "converted",
-} as const;
 
 export type UpdateOpportunityBodyPriorityLevel =
   (typeof UpdateOpportunityBodyPriorityLevel)[keyof typeof UpdateOpportunityBodyPriorityLevel];
@@ -395,88 +365,71 @@ export const UpdateOpportunityBodyPriorityLevel = {
 } as const;
 
 export interface UpdateOpportunityBody {
-  status?: UpdateOpportunityBodyStatus;
-  reviewed?: boolean;
-  convertedToLead?: boolean;
+  status?: string;
+  notes?: string;
+  tradeType?: string;
   priorityLevel?: UpdateOpportunityBodyPriorityLevel;
 }
 
-export type CreateOpportunitySourceBodyIngestionType =
-  (typeof CreateOpportunitySourceBodyIngestionType)[keyof typeof CreateOpportunitySourceBodyIngestionType];
+export type CreateOpportunityEventBodyMetadata = { [key: string]: unknown };
 
-export const CreateOpportunitySourceBodyIngestionType = {
-  api: "api",
+export interface CreateOpportunityEventBody {
+  eventType: string;
+  note?: string;
+  metadata?: CreateOpportunityEventBodyMetadata;
+}
+
+export type CreateOpportunitySourceBodySourceType =
+  (typeof CreateOpportunitySourceBodySourceType)[keyof typeof CreateOpportunitySourceBodySourceType];
+
+export const CreateOpportunitySourceBodySourceType = {
+  samgov: "samgov",
   rss: "rss",
+  google_pse: "google_pse",
   manual: "manual",
-  search: "search",
   email: "email",
 } as const;
 
-export type CreateOpportunitySourceBodyConfigJson = { [key: string]: unknown };
+export type CreateOpportunitySourceBodyConfig = { [key: string]: unknown };
 
 export interface CreateOpportunitySourceBody {
-  key: string;
   name: string;
-  ingestionType: CreateOpportunitySourceBodyIngestionType;
-  enabled?: boolean;
-  configJson?: CreateOpportunitySourceBodyConfigJson;
-  pollIntervalMinutes?: number;
-}
-
-export type UpdateOpportunitySourceBodyConfigJson = { [key: string]: unknown };
-
-export interface UpdateOpportunitySourceBody {
-  name?: string;
-  enabled?: boolean;
-  configJson?: UpdateOpportunitySourceBodyConfigJson;
-  pollIntervalMinutes?: number;
+  sourceType: CreateOpportunitySourceBodySourceType;
+  config?: CreateOpportunitySourceBodyConfig;
+  isActive?: boolean;
 }
 
 export interface CreateOpportunityRuleBody {
   name: string;
-  enabled?: boolean;
-  includeKeywords?: string[];
-  excludeKeywords?: string[];
-  states?: string[];
+  isActive?: boolean;
+  keywords?: string[];
   tradeTypes?: string[];
+  targetStates?: string[];
   minBudget?: number;
-  maxBudget?: number;
-  minScore?: number;
-  urgencyWeight?: number;
-  recencyWeight?: number;
-  budgetWeight?: number;
-  keywordWeight?: number;
 }
 
-export interface UpdateOpportunityRuleBody {
-  name?: string;
-  enabled?: boolean;
-  includeKeywords?: string[];
-  excludeKeywords?: string[];
-  states?: string[];
-  tradeTypes?: string[];
-  minBudget?: number;
-  maxBudget?: number;
-  minScore?: number;
-  urgencyWeight?: number;
-  recencyWeight?: number;
-  budgetWeight?: number;
-  keywordWeight?: number;
-}
-
-export interface CreateOpportunityEventBody {
-  eventType: string;
-  eventNote?: string;
-}
+export type EmailIngestBodyAttachmentsItem = {
+  filename: string;
+  size?: number;
+  mimeType?: string;
+};
 
 export interface EmailIngestBody {
   from?: string;
   subject?: string;
-  textBody?: string;
-  htmlBody?: string;
-  links?: string[];
-  attachmentNames?: string[];
+  body?: string;
+  attachments?: EmailIngestBodyAttachmentsItem[];
+  urls?: string[];
   receivedAt?: string;
+  sourceId?: number;
+}
+
+export interface SyncResult {
+  sourceId: number;
+  recordsFetched: number;
+  recordsInserted: number;
+  recordsSkipped: number;
+  errorMessage?: string | null;
 }
 
 export type ListLeadsParams = {
@@ -531,25 +484,15 @@ export type GetRecentLeads200 = {
 };
 
 export type ListOpportunitiesParams = {
-  status?: ListOpportunitiesStatus;
-  tradeType?: string;
+  status?: string;
+  trade_type?: string;
   state?: string;
+  min_score?: number;
   priority?: ListOpportunitiesPriority;
-  minScore?: number;
   sort?: ListOpportunitiesSort;
   limit?: number;
   offset?: number;
 };
-
-export type ListOpportunitiesStatus =
-  (typeof ListOpportunitiesStatus)[keyof typeof ListOpportunitiesStatus];
-
-export const ListOpportunitiesStatus = {
-  new: "new",
-  saved: "saved",
-  dismissed: "dismissed",
-  converted: "converted",
-} as const;
 
 export type ListOpportunitiesPriority =
   (typeof ListOpportunitiesPriority)[keyof typeof ListOpportunitiesPriority];
@@ -574,19 +517,14 @@ export type ListOpportunities200 = {
   total: number;
 };
 
-export type ListSyncRunsParams = {
+export type GetSyncLogParams = {
   limit?: number;
   offset?: number;
 };
 
-export type ListSyncRuns200 = {
-  runs: SyncRun[];
+export type GetSyncLog200 = {
+  runs: OpportunitySyncRun[];
   total: number;
-};
-
-export type IngestEmail201 = {
-  inserted: boolean;
-  updated: boolean;
 };
 
 export type ListOpportunitySources200 = {

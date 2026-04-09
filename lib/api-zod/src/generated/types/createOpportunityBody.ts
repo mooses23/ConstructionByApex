@@ -10,11 +10,16 @@ export interface CreateOpportunityBody {
   title: string;
   description?: string;
   tradeType?: string;
-  category?: string;
-  city?: string;
-  state?: string;
   budgetMin?: number;
   budgetMax?: number;
-  dueAt?: Date;
+  state?: string;
+  city?: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   sourceUrl?: string;
+  postedAt?: string;
+  deadlineAt?: string;
+  notes?: string;
+  sourceId?: number;
 }

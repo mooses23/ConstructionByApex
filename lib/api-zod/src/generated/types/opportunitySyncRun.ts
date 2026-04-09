@@ -6,10 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SyncResult {
-  sourceId: number;
+export interface OpportunitySyncRun {
+  id: number;
+  sourceId?: number | null;
+  status: string;
   recordsFetched: number;
   recordsInserted: number;
   recordsSkipped: number;
   errorMessage?: string | null;
+  startedAt: Date;
+  completedAt?: Date | null;
 }

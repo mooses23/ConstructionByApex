@@ -5,8 +5,10 @@
  * Construction By Apex API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateOpportunityEventBodyMetadata } from "./createOpportunityEventBodyMetadata";
 
 export interface CreateOpportunityEventBody {
   eventType: string;
-  eventNote?: string;
+  note?: string;
+  metadata?: CreateOpportunityEventBodyMetadata;
 }

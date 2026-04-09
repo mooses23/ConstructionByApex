@@ -23,7 +23,7 @@ tags:
   - name: dashboard
     description: Admin dashboard stats
   - name: opportunities
-    description: Opportunity intelligence engine
+    description: External bid and opportunity management
 
 paths:
   /healthz:
@@ -398,20 +398,19 @@ paths:
                       $ref: "#/components/schemas/Lead"
                 required: [leads]
 
-  # ─── OPPORTUNITIES ────────────────────────────────────────────────────────────
+  # ─── OPPORTUNITIES ────────────────────────────────────────────────────────
   /opportunities:
     get:
       operationId: listOpportunities
       tags: [opportunities]
-      summary: List opportunities with filters
+      summary: List opportunities with optional filters
       parameters:
         - in: query
           name: status
           schema:
             type: string
-            enum: [new, saved, dismissed, converted]
         - in: query
-          name: tradeType
+          name: trade_type
           schema:
             type: string
         - in: query
@@ -419,14 +418,14 @@ paths:
           schema:
             type: string
         - in: query
+          name: min_score
+          schema:
+            type: integer
+        - in: query
           name: priority
           schema:
             type: string
             enum: [high, medium, low]
-        - in: query
-          name: minScore
-          schema:
-            type: number
         - in: query
           name: sort
           schema:
@@ -475,12 +474,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Opportunity"
+        "200":
+          description: Duplicate detected, returned existing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Opportunity"
 
   /opportunities/sync-log:
     get:
-      operationId: listSyncRuns
+      operationId: getSyncLog
       tags: [opportunities]
-      summary: List ingestion sync run history
+      summary: Get paginated sync run history
       parameters:
         - in: query
           name: limit
@@ -494,7 +499,7 @@ paths:
             default: 0
       responses:
         "200":
-          description: Sync run history
+          description: Sync run log
           content:
             application/json:
               schema:
@@ -503,16 +508,16 @@ paths:
                   runs:
                     type: array
                     items:
-                      $ref: "#/components/schemas/SyncRun"
+                      $ref: "#/components/schemas/OpportunitySyncRun"
                   total:
                     type: integer
                 required: [runs, total]
 
   /opportunities/email-ingest:
     post:
-      operationId: ingestEmail
+      operationId: emailIngestOpportunity
       tags: [opportunities]
-      summary: Ingest an inbound email as an opportunity
+      summary: Ingest a parsed email as an opportunity
       requestBody:
         required: true
         content:
@@ -521,17 +526,11 @@ paths:
               $ref: "#/components/schemas/EmailIngestBody"
       responses:
         "201":
-          description: Email ingested
+          description: Opportunity ingested
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  inserted:
-                    type: boolean
-                  updated:
-                    type: boolean
-                required: [inserted, updated]
+                $ref: "#/components/schemas/Opportunity"
 
   /opportunities/sources:
     get:
@@ -563,7 +562,7 @@ paths:
               $ref: "#/components/schemas/CreateOpportunitySourceBody"
       responses:
         "201":
-          description: Created source
+          description: Source created
           content:
             application/json:
               schema:
@@ -573,13 +572,13 @@ paths:
     get:
       operationId: getOpportunitySource
       tags: [opportunities]
-      summary: Get an opportunity source
+      summary: Get a source by ID
       parameters:
         - in: path
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "200":
           description: Source
@@ -596,19 +595,19 @@ paths:
     patch:
       operationId: updateOpportunitySource
       tags: [opportunities]
-      summary: Update an opportunity source
+      summary: Update a source
       parameters:
         - in: path
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateOpportunitySourceBody"
+              $ref: "#/components/schemas/CreateOpportunitySourceBody"
       responses:
         "200":
           description: Updated source
@@ -619,20 +618,20 @@ paths:
     delete:
       operationId: deleteOpportunitySource
       tags: [opportunities]
-      summary: Delete an opportunity source
+      summary: Delete a source
       parameters:
         - in: path
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "204":
           description: Deleted
 
   /opportunities/sources/{id}/sync:
     post:
-      operationId: triggerSourceSync
+      operationId: syncOpportunitySource
       tags: [opportunities]
       summary: Trigger a manual sync for a source
       parameters:
@@ -640,7 +639,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "200":
           description: Sync result
@@ -679,7 +678,7 @@ paths:
               $ref: "#/components/schemas/CreateOpportunityRuleBody"
       responses:
         "201":
-          description: Created rule
+          description: Rule created
           content:
             application/json:
               schema:
@@ -689,13 +688,13 @@ paths:
     get:
       operationId: getOpportunityRule
       tags: [opportunities]
-      summary: Get a scoring rule
+      summary: Get a rule by ID
       parameters:
         - in: path
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "200":
           description: Rule
@@ -703,12 +702,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OpportunityRule"
-        "404":
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
     patch:
       operationId: updateOpportunityRule
       tags: [opportunities]
@@ -718,13 +711,13 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateOpportunityRuleBody"
+              $ref: "#/components/schemas/CreateOpportunityRuleBody"
       responses:
         "200":
           description: Updated rule
@@ -735,13 +728,13 @@ paths:
     delete:
       operationId: deleteOpportunityRule
       tags: [opportunities]
-      summary: Delete a scoring rule
+      summary: Delete a rule
       parameters:
         - in: path
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "204":
           description: Deleted
@@ -750,13 +743,13 @@ paths:
     get:
       operationId: getOpportunity
       tags: [opportunities]
-      summary: Get opportunity detail with events
+      summary: Get opportunity details with events
       parameters:
         - in: path
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "200":
           description: Opportunity detail
@@ -773,13 +766,13 @@ paths:
     patch:
       operationId: updateOpportunity
       tags: [opportunities]
-      summary: Update opportunity status or fields
+      summary: Update opportunity status or notes
       parameters:
         - in: path
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       requestBody:
         required: true
         content:
@@ -802,7 +795,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "204":
           description: Deleted
@@ -817,10 +810,10 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       responses:
         "200":
-          description: Events
+          description: List of events
           content:
             application/json:
               schema:
@@ -834,13 +827,13 @@ paths:
     post:
       operationId: createOpportunityEvent
       tags: [opportunities]
-      summary: Add an event to an opportunity
+      summary: Log an event for an opportunity
       parameters:
         - in: path
           name: id
           required: true
           schema:
-            type: string
+            type: integer
       requestBody:
         required: true
         content:
@@ -1130,6 +1123,8 @@ components:
           type: integer
         thisMonthLeads:
           type: integer
+        wonThisMonth:
+          type: integer
         conversionRate:
           type: number
       required:
@@ -1140,6 +1135,7 @@ components:
         - wonLeads
         - lostLeads
         - thisMonthLeads
+        - wonThisMonth
         - conversionRate
 
     CreateLeadBody:
@@ -1260,15 +1256,13 @@ components:
                 type: number
             required: [description, quantity, unitPrice]
 
-    # ─── OPPORTUNITY SCHEMAS ──────────────────────────────────────────────────
-
     Opportunity:
       type: object
       properties:
         id:
-          type: string
+          type: integer
         sourceId:
-          type: string
+          type: integer
           nullable: true
         externalId:
           type: string
@@ -1278,64 +1272,57 @@ components:
         description:
           type: string
           nullable: true
-        category:
-          type: string
-          nullable: true
         tradeType:
           type: string
           nullable: true
-        city:
+        status:
           type: string
-          nullable: true
-        state:
+        priorityLevel:
           type: string
-          nullable: true
+          enum: [high, medium, low]
+        score:
+          type: integer
+        scoreReasonsJson:
+          type: array
+          items:
+            type: string
         budgetMin:
           type: number
           nullable: true
         budgetMax:
           type: number
           nullable: true
-        estimatedValue:
-          type: number
+        state:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        contactName:
+          type: string
+          nullable: true
+        contactEmail:
+          type: string
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+        sourceUrl:
+          type: string
           nullable: true
         postedAt:
           type: string
           format: date-time
           nullable: true
-        dueAt:
+        deadlineAt:
           type: string
           format: date-time
           nullable: true
-        sourceUrl:
+        ingestMethod:
+          type: string
+        notes:
           type: string
           nullable: true
-        sourceName:
-          type: string
-          nullable: true
-        ingestionType:
-          type: string
-          nullable: true
-        score:
-          type: number
-        priorityLevel:
-          type: string
-          enum: [high, medium, low]
-          nullable: true
-        relevanceReason:
-          type: string
-          nullable: true
-        scoreReasonsJson:
-          type: object
-          nullable: true
-          additionalProperties: true
-        status:
-          type: string
-          enum: [new, saved, dismissed, converted]
-        reviewed:
-          type: boolean
-        convertedToLead:
-          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -1345,10 +1332,11 @@ components:
       required:
         - id
         - title
-        - score
         - status
-        - reviewed
-        - convertedToLead
+        - priorityLevel
+        - score
+        - scoreReasonsJson
+        - ingestMethod
         - createdAt
         - updatedAt
 
@@ -1367,160 +1355,106 @@ components:
       type: object
       properties:
         id:
-          type: string
+          type: integer
         opportunityId:
-          type: string
+          type: integer
         eventType:
           type: string
-        eventNote:
+        note:
           type: string
           nullable: true
+        metadata:
+          type: object
         createdAt:
           type: string
           format: date-time
-      required: [id, opportunityId, eventType, createdAt]
+      required: [id, opportunityId, eventType, metadata, createdAt]
 
     OpportunitySource:
       type: object
       properties:
         id:
-          type: string
-        key:
-          type: string
+          type: integer
         name:
           type: string
-        ingestionType:
+        sourceType:
           type: string
-        enabled:
-          type: boolean
-        configJson:
+          enum: [samgov, rss, google_pse, manual, email]
+        config:
           type: object
-          nullable: true
-          additionalProperties: true
-        pollIntervalMinutes:
-          type: integer
-          nullable: true
+        isActive:
+          type: boolean
         lastSyncAt:
           type: string
           format: date-time
           nullable: true
-        lastError:
-          type: string
-          nullable: true
         createdAt:
           type: string
           format: date-time
-      required: [id, key, name, ingestionType, enabled, createdAt]
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, name, sourceType, config, isActive, createdAt, updatedAt]
+
+    OpportunitySyncRun:
+      type: object
+      properties:
+        id:
+          type: integer
+        sourceId:
+          type: integer
+          nullable: true
+        status:
+          type: string
+        recordsFetched:
+          type: integer
+        recordsInserted:
+          type: integer
+        recordsSkipped:
+          type: integer
+        errorMessage:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, status, recordsFetched, recordsInserted, recordsSkipped, startedAt]
 
     OpportunityRule:
       type: object
       properties:
         id:
-          type: string
+          type: integer
         name:
           type: string
-        enabled:
+        isActive:
           type: boolean
-        includeKeywords:
+        keywords:
           type: array
           items:
             type: string
-          nullable: true
-        excludeKeywords:
-          type: array
-          items:
-            type: string
-          nullable: true
-        states:
-          type: array
-          items:
-            type: string
-          nullable: true
         tradeTypes:
           type: array
           items:
             type: string
-          nullable: true
+        targetStates:
+          type: array
+          items:
+            type: string
         minBudget:
           type: number
           nullable: true
-        maxBudget:
-          type: number
-          nullable: true
-        minScore:
-          type: number
-          nullable: true
-        urgencyWeight:
-          type: number
-        recencyWeight:
-          type: number
-        budgetWeight:
-          type: number
-        keywordWeight:
-          type: number
         createdAt:
           type: string
           format: date-time
-      required:
-        - id
-        - name
-        - enabled
-        - urgencyWeight
-        - recencyWeight
-        - budgetWeight
-        - keywordWeight
-        - createdAt
-
-    SyncRun:
-      type: object
-      properties:
-        id:
-          type: string
-        sourceId:
-          type: string
-          nullable: true
-        sourceName:
-          type: string
-        startedAt:
+        updatedAt:
           type: string
           format: date-time
-        finishedAt:
-          type: string
-          format: date-time
-          nullable: true
-        status:
-          type: string
-          enum: [running, success, error]
-        itemsFetched:
-          type: integer
-          nullable: true
-        itemsInserted:
-          type: integer
-          nullable: true
-        itemsUpdated:
-          type: integer
-          nullable: true
-        errorText:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-      required: [id, sourceName, startedAt, status, createdAt]
-
-    SyncResult:
-      type: object
-      properties:
-        itemsFetched:
-          type: integer
-        itemsInserted:
-          type: integer
-        itemsUpdated:
-          type: integer
-        error:
-          type: string
-          nullable: true
-      required: [itemsFetched, itemsInserted, itemsUpdated]
+      required: [id, name, isActive, keywords, tradeTypes, targetStates, createdAt, updatedAt]
 
     CreateOpportunityBody:
       type: object
@@ -1531,21 +1465,30 @@ components:
           type: string
         tradeType:
           type: string
-        category:
-          type: string
-        city:
-          type: string
-        state:
-          type: string
         budgetMin:
           type: number
         budgetMax:
           type: number
-        dueAt:
+        state:
           type: string
-          format: date-time
+        city:
+          type: string
+        contactName:
+          type: string
+        contactEmail:
+          type: string
+        contactPhone:
+          type: string
         sourceUrl:
           type: string
+        postedAt:
+          type: string
+        deadlineAt:
+          type: string
+        notes:
+          type: string
+        sourceId:
+          type: integer
       required: [title]
 
     UpdateOpportunityBody:
@@ -1553,132 +1496,61 @@ components:
       properties:
         status:
           type: string
-          enum: [new, saved, dismissed, converted]
-        reviewed:
-          type: boolean
-        convertedToLead:
-          type: boolean
+        notes:
+          type: string
+        tradeType:
+          type: string
         priorityLevel:
           type: string
           enum: [high, medium, low]
-
-    CreateOpportunitySourceBody:
-      type: object
-      properties:
-        key:
-          type: string
-        name:
-          type: string
-        ingestionType:
-          type: string
-          enum: [api, rss, manual, search, email]
-        enabled:
-          type: boolean
-        configJson:
-          type: object
-          additionalProperties: true
-        pollIntervalMinutes:
-          type: integer
-      required: [key, name, ingestionType]
-
-    UpdateOpportunitySourceBody:
-      type: object
-      properties:
-        name:
-          type: string
-        enabled:
-          type: boolean
-        configJson:
-          type: object
-          additionalProperties: true
-        pollIntervalMinutes:
-          type: integer
-
-    CreateOpportunityRuleBody:
-      type: object
-      properties:
-        name:
-          type: string
-        enabled:
-          type: boolean
-        includeKeywords:
-          type: array
-          items:
-            type: string
-        excludeKeywords:
-          type: array
-          items:
-            type: string
-        states:
-          type: array
-          items:
-            type: string
-        tradeTypes:
-          type: array
-          items:
-            type: string
-        minBudget:
-          type: number
-        maxBudget:
-          type: number
-        minScore:
-          type: number
-        urgencyWeight:
-          type: number
-        recencyWeight:
-          type: number
-        budgetWeight:
-          type: number
-        keywordWeight:
-          type: number
-      required: [name]
-
-    UpdateOpportunityRuleBody:
-      type: object
-      properties:
-        name:
-          type: string
-        enabled:
-          type: boolean
-        includeKeywords:
-          type: array
-          items:
-            type: string
-        excludeKeywords:
-          type: array
-          items:
-            type: string
-        states:
-          type: array
-          items:
-            type: string
-        tradeTypes:
-          type: array
-          items:
-            type: string
-        minBudget:
-          type: number
-        maxBudget:
-          type: number
-        minScore:
-          type: number
-        urgencyWeight:
-          type: number
-        recencyWeight:
-          type: number
-        budgetWeight:
-          type: number
-        keywordWeight:
-          type: number
 
     CreateOpportunityEventBody:
       type: object
       properties:
         eventType:
           type: string
-        eventNote:
+        note:
           type: string
+        metadata:
+          type: object
       required: [eventType]
+
+    CreateOpportunitySourceBody:
+      type: object
+      properties:
+        name:
+          type: string
+        sourceType:
+          type: string
+          enum: [samgov, rss, google_pse, manual, email]
+        config:
+          type: object
+        isActive:
+          type: boolean
+      required: [name, sourceType]
+
+    CreateOpportunityRuleBody:
+      type: object
+      properties:
+        name:
+          type: string
+        isActive:
+          type: boolean
+        keywords:
+          type: array
+          items:
+            type: string
+        tradeTypes:
+          type: array
+          items:
+            type: string
+        targetStates:
+          type: array
+          items:
+            type: string
+        minBudget:
+          type: number
+      required: [name]
 
     EmailIngestBody:
       type: object
@@ -1687,18 +1559,41 @@ components:
           type: string
         subject:
           type: string
-        textBody:
+        body:
           type: string
-        htmlBody:
-          type: string
-        links:
+        attachments:
           type: array
           items:
-            type: string
-        attachmentNames:
+            type: object
+            properties:
+              filename:
+                type: string
+              size:
+                type: integer
+              mimeType:
+                type: string
+            required: [filename]
+        urls:
           type: array
           items:
             type: string
         receivedAt:
           type: string
-          format: date-time
+        sourceId:
+          type: integer
+
+    SyncResult:
+      type: object
+      properties:
+        sourceId:
+          type: integer
+        recordsFetched:
+          type: integer
+        recordsInserted:
+          type: integer
+        recordsSkipped:
+          type: integer
+        errorMessage:
+          type: string
+          nullable: true
+      required: [sourceId, recordsFetched, recordsInserted, recordsSkipped]

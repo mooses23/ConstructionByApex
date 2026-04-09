@@ -5,14 +5,12 @@
  * Construction By Apex API
  * OpenAPI spec version: 0.1.0
  */
-import type { CreateOpportunitySourceBodyConfigJson } from "./createOpportunitySourceBodyConfigJson";
-import type { CreateOpportunitySourceBodyIngestionType } from "./createOpportunitySourceBodyIngestionType";
+import type { CreateOpportunitySourceBodyConfig } from "./createOpportunitySourceBodyConfig";
+import type { CreateOpportunitySourceBodySourceType } from "./createOpportunitySourceBodySourceType";
 
 export interface CreateOpportunitySourceBody {
-  key: string;
   name: string;
-  ingestionType: CreateOpportunitySourceBodyIngestionType;
-  enabled?: boolean;
-  configJson?: CreateOpportunitySourceBodyConfigJson;
-  pollIntervalMinutes?: number;
+  sourceType: CreateOpportunitySourceBodySourceType;
+  config?: CreateOpportunitySourceBodyConfig;
+  isActive?: boolean;
 }

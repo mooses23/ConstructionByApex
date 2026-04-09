@@ -5,17 +5,16 @@
  * Construction By Apex API
  * OpenAPI spec version: 0.1.0
  */
-import type { OpportunitySourceConfigJson } from "./opportunitySourceConfigJson";
+import type { OpportunitySourceConfig } from "./opportunitySourceConfig";
+import type { OpportunitySourceSourceType } from "./opportunitySourceSourceType";
 
 export interface OpportunitySource {
-  id: string;
-  key: string;
+  id: number;
   name: string;
-  ingestionType: string;
-  enabled: boolean;
-  configJson?: OpportunitySourceConfigJson;
-  pollIntervalMinutes?: number | null;
+  sourceType: OpportunitySourceSourceType;
+  config: OpportunitySourceConfig;
+  isActive: boolean;
   lastSyncAt?: Date | null;
-  lastError?: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }

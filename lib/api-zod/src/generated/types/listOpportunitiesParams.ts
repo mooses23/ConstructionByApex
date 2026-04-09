@@ -7,14 +7,13 @@
  */
 import type { ListOpportunitiesPriority } from "./listOpportunitiesPriority";
 import type { ListOpportunitiesSort } from "./listOpportunitiesSort";
-import type { ListOpportunitiesStatus } from "./listOpportunitiesStatus";
 
 export type ListOpportunitiesParams = {
-  status?: ListOpportunitiesStatus;
-  tradeType?: string;
+  status?: string;
+  trade_type?: string;
   state?: string;
+  min_score?: number;
   priority?: ListOpportunitiesPriority;
-  minScore?: number;
   sort?: ListOpportunitiesSort;
   limit?: number;
   offset?: number;

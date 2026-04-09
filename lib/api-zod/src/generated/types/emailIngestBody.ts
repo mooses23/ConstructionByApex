@@ -5,13 +5,14 @@
  * Construction By Apex API
  * OpenAPI spec version: 0.1.0
  */
+import type { EmailIngestBodyAttachmentsItem } from "./emailIngestBodyAttachmentsItem";
 
 export interface EmailIngestBody {
   from?: string;
   subject?: string;
-  textBody?: string;
-  htmlBody?: string;
-  links?: string[];
-  attachmentNames?: string[];
-  receivedAt?: Date;
+  body?: string;
+  attachments?: EmailIngestBodyAttachmentsItem[];
+  urls?: string[];
+  receivedAt?: string;
+  sourceId?: number;
 }

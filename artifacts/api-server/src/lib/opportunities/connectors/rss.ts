@@ -1,58 +1,73 @@
 import { XMLParser } from "fast-xml-parser";
-import { NormalizedOpportunity, SyncRunResult } from "../types.js";
-import { saveOpportunity, recordSyncRun } from "../core.js";
+import type { NormalizedOpportunity, OpportunityConnector } from "../types";
 
-interface RSSItem {
-  title?: string | { "#text"?: string };
-  description?: string | { "#text"?: string };
-  link?: string | { "#text"?: string };
-  guid?: string | { "#text"?: string; "@_isPermaLink"?: string };
-  pubDate?: string;
-  "dc:date"?: string;
-  category?: string | string[];
+interface RSSParams {
+  feedUrl: string;
+  sourceId?: number;
+  tradeType?: string;
+  state?: string;
 }
 
-function text(val: unknown): string | undefined {
-  if (typeof val === "string") return val || undefined;
-  if (val && typeof val === "object" && "#text" in val) return String((val as Record<string, unknown>)["#text"]) || undefined;
+interface ParsedFeedItem {
+  title: string;
+  description?: string;
+  link?: string;
+  pubDate?: string;
+}
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  cdataPropName: "__cdata",
+  allowBooleanAttributes: true,
+});
+
+function extractText(value: unknown): string | undefined {
+  if (typeof value === "string") return value.trim() || undefined;
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    if (typeof obj["__cdata"] === "string") return obj["__cdata"].trim() || undefined;
+    if (typeof obj["#text"] === "string") return obj["#text"].trim() || undefined;
+  }
   return undefined;
 }
 
-function parseRSS(xml: string): RSSItem[] {
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: "@_",
-    textNodeName: "#text",
-  });
-  const doc = parser.parse(xml);
+function parseFeedItems(xml: string): ParsedFeedItem[] {
+  const parsed = parser.parse(xml);
+  const channel =
+    parsed?.rss?.channel ??
+    parsed?.feed ??
+    parsed?.["rdf:RDF"]?.channel ??
+    {};
 
-  // Handle RSS 2.0 and Atom
-  const channel = doc?.rss?.channel ?? doc?.feed;
-  if (!channel) return [];
+  const rawItems: Record<string, unknown>[] = [];
+  const items = channel.item ?? channel.entry ?? [];
 
-  const items: RSSItem[] = channel.item ?? channel.entry ?? [];
-  return Array.isArray(items) ? items : [items];
+  if (Array.isArray(items)) {
+    rawItems.push(...(items as Record<string, unknown>[]));
+  } else if (items && typeof items === "object") {
+    rawItems.push(items as Record<string, unknown>);
+  }
+
+  const result: ParsedFeedItem[] = [];
+  for (const item of rawItems) {
+    const title = extractText(item.title);
+    if (!title) continue;
+    result.push({
+      title,
+      description: extractText(item.description) ?? extractText(item.summary),
+      link: extractText(item.link) ?? extractText(item.guid),
+      pubDate: extractText(item.pubDate) ?? extractText(item.updated) ?? extractText(item.published),
+    });
+  }
+  return result;
 }
 
-function dedupeKey(item: RSSItem): string | undefined {
-  const g = text(item.guid);
-  const l = text(item.link);
-  return g ?? l;
-}
+export class RSSConnector implements OpportunityConnector {
+  async fetch(params: Record<string, unknown>): Promise<NormalizedOpportunity[]> {
+    const { feedUrl, sourceId, tradeType, state } = params as RSSParams;
 
-export async function runRSSSync(
-  sourceId: string,
-  sourceName: string,
-  config: { feedUrl: string; state?: string; tradeType?: string }
-): Promise<SyncRunResult> {
-  const startedAt = new Date();
-  let fetched = 0;
-  let inserted = 0;
-  let updated = 0;
-
-  try {
-    const response = await fetch(config.feedUrl, {
-      headers: { "User-Agent": "ConstructionByApex/1.0 (+https://apexconstruction.com)" },
+    const response = await fetch(String(feedUrl), {
+      headers: { Accept: "application/rss+xml, application/xml, application/atom+xml, text/xml" },
     });
 
     if (!response.ok) {
@@ -60,41 +75,27 @@ export async function runRSSSync(
     }
 
     const xml = await response.text();
-    const items = parseRSS(xml);
-    fetched = items.length;
+    const items = parseFeedItems(xml);
 
-    for (const item of items) {
-      const title = text(item.title) ?? "Untitled RSS Item";
-      const link = text(item.link);
-      const guid = text(item.guid);
-      const pubDate = item.pubDate ?? item["dc:date"];
-      const postedAt = pubDate ? new Date(pubDate) : undefined;
-
-      const normalized: NormalizedOpportunity = {
-        title,
-        description: text(item.description),
-        tradeType: config.tradeType,
-        state: config.state,
-        sourceUrl: link,
-        externalId: dedupeKey(item) ?? title,
-        sourceName,
-        ingestionType: "rss",
-        postedAt,
-        rawPayload: item,
-      };
-
-      const { inserted: ins, updated: upd } = await saveOpportunity(sourceId, normalized);
-      if (ins) inserted++;
-      if (upd) updated++;
-    }
-
-    const result: SyncRunResult = { itemsFetched: fetched, itemsInserted: inserted, itemsUpdated: updated };
-    await recordSyncRun(sourceId, result, startedAt);
-    return result;
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    const result: SyncRunResult = { itemsFetched: fetched, itemsInserted: inserted, itemsUpdated: updated, error };
-    await recordSyncRun(sourceId, result, startedAt);
-    return result;
+    return items.map((item): NormalizedOpportunity => ({
+      sourceId: typeof sourceId === "number" ? sourceId : undefined,
+      title: item.title,
+      description: item.description,
+      tradeType,
+      state,
+      sourceUrl: item.link,
+      postedAt: item.pubDate ? new Date(item.pubDate) : undefined,
+      rawPayloadJson: item as unknown as Record<string, unknown>,
+      ingestMethod: "rss",
+    }));
   }
+}
+
+export async function fetchRSSFeed(
+  sourceId: number,
+  feedUrl: string,
+  meta?: { tradeType?: string; state?: string }
+): Promise<NormalizedOpportunity[]> {
+  const connector = new RSSConnector();
+  return connector.fetch({ feedUrl, sourceId, ...meta });
 }
