@@ -1,0 +1,509 @@
+You are extending an existing admin portal for Construction By Apex.
+
+The admin portal already exists with:
+	•	authentication via Supabase
+	•	leads system
+	•	quotes system
+	•	dashboard UI
+	•	consistent layout components
+	•	shadcn/ui components
+	•	Next.js App Router structure
+	•	Tailwind styling
+	•	Supabase database connection
+	•	Vercel-compatible architecture
+
+Your task is to add one new module called:
+
+Opportunities
+
+This module aggregates external job opportunities into a unified inbox that allows the contractor to review and convert opportunities into leads.
+
+Do not redesign the existing admin portal.
+
+Do not refactor unrelated code.
+
+Follow the existing UI patterns.
+
+Match the current design language.
+
+Keep implementation clean and minimal.
+
+⸻
+
+Functional Goal
+
+Provide a structured way to ingest and review potential external work opportunities from compliant sources.
+
+This is NOT a generic web scraper.
+
+Do NOT implement broad crawling of arbitrary websites.
+
+Use connector-based ingestion that supports:
+	•	official APIs
+	•	RSS feeds
+	•	manual entry
+	•	future email ingestion
+
+Normalize all incoming data into a single opportunities table.
+
+⸻
+
+Routes to Add
+
+Add these routes inside the existing admin route group:
+
+/admin/opportunities
+/admin/opportunities/sources
+/admin/opportunities/rules
+/admin/opportunities/[id]
+
+Follow the same layout wrapper used by other admin pages.
+
+⸻
+
+Database Schema (Supabase)
+
+Add the following new tables only.
+
+Do not modify existing tables.
+
+opportunities
+
+id uuid pk default gen_random_uuid()
+
+source_id uuid nullable
+
+external_id text nullable
+
+title text not null
+
+description text nullable
+
+category text nullable
+
+city text nullable
+
+state text nullable
+
+budget_min numeric nullable
+
+budget_max numeric nullable
+
+posted_at timestamptz nullable
+
+due_at timestamptz nullable
+
+source_url text nullable
+
+source_name text nullable
+
+ingestion_type text nullable
+
+score numeric default 0
+
+score_reasons_json jsonb nullable
+
+raw_payload_json jsonb nullable
+
+status text default ‘new’
+
+created_at timestamptz default now()
+
+updated_at timestamptz default now()
+
+index on:
+
+status
+posted_at
+state
+category
+score
+
+⸻
+
+opportunity_sources
+
+id uuid pk default gen_random_uuid()
+
+key text unique
+
+name text
+
+ingestion_type text
+
+enabled boolean default true
+
+config_json jsonb nullable
+
+last_sync_at timestamptz nullable
+
+last_error text nullable
+
+created_at timestamptz default now()
+
+⸻
+
+opportunity_sync_runs
+
+id uuid pk default gen_random_uuid()
+
+source_id uuid references opportunity_sources(id)
+
+started_at timestamptz
+
+finished_at timestamptz
+
+status text
+
+items_fetched integer
+
+items_inserted integer
+
+error_text text nullable
+
+⸻
+
+opportunity_rules
+
+id uuid pk default gen_random_uuid()
+
+name text
+
+enabled boolean default true
+
+include_keywords text[]
+
+exclude_keywords text[]
+
+states text[]
+
+categories text[]
+
+min_budget numeric nullable
+
+max_budget numeric nullable
+
+urgency_weight numeric default 1
+
+created_at timestamptz default now()
+
+⸻
+
+RLS
+
+Use simple RLS:
+
+authenticated users only can read/write.
+
+Public users cannot access these tables.
+
+Reuse existing auth helpers.
+
+⸻
+
+UI Requirements
+
+Follow the existing admin UI style.
+
+Use existing:
+
+cards
+tables
+badges
+buttons
+filters
+spacing scale
+
+Do not introduce a new design language.
+
+⸻
+
+Page 1 — Opportunities Inbox
+
+Route:
+/admin/opportunities
+
+Display table or card list.
+
+Columns:
+
+title
+source
+category
+location
+budget
+posted date
+deadline
+score
+status
+
+Statuses:
+
+new
+reviewed
+saved
+dismissed
+converted
+
+Row actions:
+
+view details
+open source link
+mark reviewed
+save
+dismiss
+convert to lead
+
+Filters:
+
+status
+category
+state
+min score
+
+Sort:
+
+newest
+highest score
+
+⸻
+
+Page 2 — Opportunity Detail
+
+Route:
+/admin/opportunities/[id]
+
+Sections:
+
+Header
+title
+source
+category
+location
+budget
+dates
+
+Description block
+
+External link
+
+Score display
+
+Actions:
+
+mark reviewed
+save
+dismiss
+convert to lead
+
+Raw payload expandable JSON viewer (collapsed by default)
+
+⸻
+
+Page 3 — Sources
+
+Route:
+/admin/opportunities/sources
+
+Purpose:
+
+manage ingestion connectors
+
+Fields:
+
+source name
+type
+enabled toggle
+last sync time
+last error
+
+Allow create/edit:
+
+name
+type
+config_json
+
+Types:
+
+api
+rss
+manual
+
+Do not overbuild UI.
+
+Simple form is sufficient.
+
+⸻
+
+Page 4 — Rules
+
+Route:
+/admin/opportunities/rules
+
+Purpose:
+
+basic filtering logic for scoring relevance.
+
+Fields:
+
+include keywords
+exclude keywords
+states
+categories
+min budget
+max budget
+
+Use simple form inputs.
+
+Store arrays as text[].
+
+⸻
+
+Convert Opportunity to Lead
+
+Add button:
+
+Convert to Lead
+
+When clicked:
+
+create record in existing leads table.
+
+map:
+
+title → description
+
+city/state → location fields
+
+source_name → lead source field
+
+preserve reference:
+
+opportunity_id
+
+store source_url in notes field if available.
+
+⸻
+
+Initial Connector Implementation
+
+Implement two connector types:
+
+1. Manual
+
+Admin can create opportunity manually.
+
+2. RSS
+
+Generic RSS ingestion utility.
+
+Steps:
+
+fetch feed
+
+parse items
+
+normalize fields:
+
+title
+description
+url
+date
+
+store raw payload JSON.
+
+Avoid heavy dependencies.
+
+⸻
+
+Ingestion Architecture
+
+Create simple service:
+
+lib/opportunities/ingestion.ts
+
+functions:
+
+fetchRSSFeed()
+
+normalizeOpportunity()
+
+scoreOpportunity()
+
+saveOpportunity()
+
+Scoring logic v1:
+
++2 keyword match
++1 matching state
++1 category match
++1 deadline within 14 days
+
+Store explanation in score_reasons_json.
+
+⸻
+
+UI Consistency Rules
+
+Use:
+
+existing layout wrapper
+
+existing typography scale
+
+existing button variants
+
+existing card patterns
+
+existing loading skeleton patterns
+
+Do not introduce new visual system.
+
+⸻
+
+Performance
+
+Do not run ingestion client-side.
+
+Use server actions or route handlers.
+
+Make ingestion callable manually.
+
+Future cron compatibility required but do not implement cron yet.
+
+⸻
+
+Deliverables
+
+new routes
+
+new tables
+
+minimal connectors
+
+convert-to-lead flow
+
+matching UI
+
+typed models
+
+clean separation of module code
+
+no breaking changes to existing portal
+
+⸻
+
+Start implementation in this order
+	1.	schema SQL
+	2.	TypeScript types
+	3.	opportunities inbox page
+	4.	opportunity detail page
+	5.	manual entry form
+	6.	RSS connector
+	7.	convert to lead action
+	8.	sources page
+	9.	rules page
+
+Stop after these steps.
+
+Do not expand scope.
