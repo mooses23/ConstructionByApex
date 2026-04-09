@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import PageMeta from "@/components/PageMeta";
 
 const SERVICE_AREA = [
   "Columbus", "Westerville", "Dublin", "Gahanna", "Hilliard",
@@ -12,6 +13,11 @@ const SERVICE_AREA = [
 export default function ContactPage() {
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Contact"
+        description="Get in touch with Construction By Apex. Call, text, or email — we respond to every inquiry within one business day. Serving Columbus and Central Ohio."
+        path="/contact"
+      />
       <div className="bg-slate-900 py-14 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Get in Touch</h1>
@@ -115,7 +121,7 @@ export default function ContactPage() {
               For a detailed quote, <a href="/quote" className="text-amber-500 hover:underline font-semibold">use our quote request form</a>. For general questions, use this form.
             </p>
             <form className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="contact-name">Name</Label>
                   <Input id="contact-name" placeholder="Your name" className="mt-1" />

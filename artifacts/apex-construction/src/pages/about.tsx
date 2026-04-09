@@ -2,6 +2,7 @@ import { Shield, Star, Clock, Users } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import CtaSection from "@/components/CtaSection";
+import PageMeta from "@/components/PageMeta";
 
 const VALUES = [
   {
@@ -29,6 +30,11 @@ const VALUES = [
 export default function AboutPage() {
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="About"
+        description="Learn about Construction By Apex — a trusted, licensed general contractor based in Columbus, OH. Honest work, clear communication, and quality craftsmanship in Central Ohio."
+        path="/about"
+      />
       <div className="bg-slate-900 py-14 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">About Apex</h1>

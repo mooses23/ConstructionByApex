@@ -29,9 +29,11 @@ export default function AdminQuotes() {
           </div>
         ) : quotes.length === 0 ? (
           <div className="text-center py-16">
-            <FileText className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-400">No quotes created yet.</p>
-            <p className="text-slate-400 text-sm mt-1">Go to a lead and create a quote from there.</p>
+            <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-7 h-7 text-slate-400" />
+            </div>
+            <h3 className="font-bold text-slate-700 mb-1">No quotes yet</h3>
+            <p className="text-slate-400 text-sm max-w-xs mx-auto">Open a lead and use the "Create Quote" action to generate your first quote.</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">

@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useListTestimonials } from "@workspace/api-client-react";
 import CtaSection from "@/components/CtaSection";
+import PageMeta from "@/components/PageMeta";
 
 export default function ReviewsPage() {
   const { data, isLoading } = useListTestimonials();
@@ -10,6 +11,11 @@ export default function ReviewsPage() {
 
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Reviews"
+        description="See what Central Ohio homeowners say about working with Construction By Apex — honest reviews from real clients across Columbus, Westerville, Dublin, and more."
+        path="/reviews"
+      />
       <div className="bg-slate-900 py-14 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">What Our Clients Say</h1>

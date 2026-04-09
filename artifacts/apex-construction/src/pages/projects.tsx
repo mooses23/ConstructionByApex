@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useListProjects } from "@workspace/api-client-react";
 import CtaSection from "@/components/CtaSection";
+import PageMeta from "@/components/PageMeta";
 
 export default function ProjectsPage() {
   const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
@@ -25,6 +26,11 @@ export default function ProjectsPage() {
 
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Projects"
+        description="Browse completed construction projects by Construction By Apex — kitchen remodels, decks, basements, additions, and more across Central Ohio."
+        path="/projects"
+      />
       <div className="bg-slate-900 py-14 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Our Projects</h1>
@@ -62,8 +68,19 @@ export default function ProjectsPage() {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-xl" />)}
           </div>
         ) : projects.length === 0 ? (
-          <div className="text-center py-20 text-slate-400">
-            <p className="text-lg">No projects found in this category yet.</p>
+          <div className="text-center py-20">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FolderOpen className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="font-bold text-slate-700 text-lg mb-2">No projects in this category yet</h3>
+            <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">We're always adding new work. Check back soon or browse all of our completed projects.</p>
+            <Button
+              size="sm"
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+              onClick={() => setActiveCategory(undefined)}
+            >
+              View All Projects
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

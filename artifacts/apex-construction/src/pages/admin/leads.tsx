@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Search, Filter, ChevronRight, Clock, MapPin } from "lucide-react";
+import { Search, ChevronRight, Clock, MapPin, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,8 +76,28 @@ export default function AdminLeads() {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
           </div>
         ) : leads.length === 0 ? (
-          <div className="text-center py-16 text-slate-400">
-            <p>No leads found</p>
+          <div className="text-center py-16">
+            <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-7 h-7 text-slate-400" />
+            </div>
+            <h3 className="font-bold text-slate-700 mb-1">
+              {search || statusFilter !== "all" ? "No leads match your filters" : "No leads yet"}
+            </h3>
+            <p className="text-slate-400 text-sm mb-4 max-w-xs mx-auto">
+              {search || statusFilter !== "all"
+                ? "Try adjusting your search or status filter."
+                : "When someone submits a quote request from the website, their lead will appear here."}
+            </p>
+            {(search || statusFilter !== "all") && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-slate-300 text-slate-600"
+                onClick={() => { setSearch(""); setStatusFilter("all"); }}
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-slate-100">

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useListServices } from "@workspace/api-client-react";
 import CtaSection from "@/components/CtaSection";
+import PageMeta from "@/components/PageMeta";
 
 export default function ServicesPage() {
   const { data, isLoading } = useListServices();
@@ -14,6 +15,11 @@ export default function ServicesPage() {
 
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Services"
+        description="Kitchen remodeling, bathroom remodels, deck construction, basement finishing, room additions, and more — Construction By Apex handles it all in Central Ohio."
+        path="/services"
+      />
       <div className="bg-slate-900 py-14 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4">Our Services</h1>

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CheckCircle, Phone, Upload, Loader2 } from "lucide-react";
+import PageMeta from "@/components/PageMeta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -108,7 +109,12 @@ export default function QuotePage() {
   }
 
   return (
-    <div className="pb-20 md:pb-0">
+    <div className="pb-24 md:pb-0">
+      <PageMeta
+        title="Request a Free Quote"
+        description="Request a free estimate from Construction By Apex. Tell us about your project — kitchen, bathroom, deck, addition, or any remodel — and we'll respond within one business day."
+        path="/quote"
+      />
       <div className="bg-slate-900 py-12 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-3">Request a Free Quote</h1>
@@ -137,7 +143,7 @@ export default function QuotePage() {
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="phone"

@@ -1,10 +1,48 @@
 import { Link } from "wouter";
+import { Helmet } from "react-helmet-async";
 import { Phone, MessageSquare, FileText, Shield, Clock, Star, CheckCircle, MapPin, ChevronRight, ClipboardList, Home, Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useListServices, useListProjects, useListTestimonials } from "@workspace/api-client-react";
 import CtaSection from "@/components/CtaSection";
+import PageMeta from "@/components/PageMeta";
+
+const LOCAL_BUSINESS_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Construction By Apex",
+  "url": "https://constructionbyapex.com",
+  "telephone": "+16145550182",
+  "email": "info@constructionbyapex.com",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "",
+    "addressLocality": "Columbus",
+    "addressRegion": "OH",
+    "postalCode": "43085",
+    "addressCountry": "US"
+  },
+  "areaServed": [
+    "Columbus", "Westerville", "Dublin", "Gahanna", "Hilliard",
+    "Grove City", "Reynoldsburg", "Pickerington", "Canal Winchester", "Lancaster"
+  ],
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "07:00",
+      "closes": "18:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Saturday"],
+      "opens": "08:00",
+      "closes": "14:00"
+    }
+  ],
+  "description": "Licensed and insured general contractor serving Central Ohio. Kitchen remodels, bathroom remodels, deck construction, basement finishing, room additions, and more."
+};
 
 const SERVICE_AREA = [
   "Columbus", "Westerville", "Dublin", "Gahanna", "Hilliard",
@@ -52,6 +90,16 @@ export default function HomePage() {
 
   return (
     <div className="pb-16 md:pb-0">
+      <PageMeta
+        title="Home"
+        description="Construction By Apex is a licensed &amp; insured general contractor serving Columbus, Westerville, Dublin, and Central Ohio. Kitchen remodels, decks, additions &amp; more."
+        path="/"
+      />
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(LOCAL_BUSINESS_JSON_LD)}
+        </script>
+      </Helmet>
       {/* Hero */}
       <section className="relative bg-slate-900 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 opacity-90" />
