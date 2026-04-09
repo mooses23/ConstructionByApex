@@ -6,6 +6,7 @@ import projectsRouter from "./projects";
 import testimonialsRouter from "./testimonials";
 import servicesRouter from "./services";
 import dashboardRouter from "./dashboard";
+import opportunitiesRouter from "./opportunities";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(projectsRouter);
 router.use(testimonialsRouter);
 router.use(servicesRouter);
 router.use(dashboardRouter);
+router.use(opportunitiesRouter);
 
 export default router;

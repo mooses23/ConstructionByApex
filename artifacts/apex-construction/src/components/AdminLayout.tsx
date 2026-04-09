@@ -1,11 +1,23 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, FileText, BarChart3, ChevronRight, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ChevronRight, Menu, X, TrendingUp, Settings2, RefreshCw, Rss } from "lucide-react";
 import { useState } from "react";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/leads", label: "Leads", icon: Users, exact: false },
   { href: "/admin/quotes", label: "Quotes", icon: FileText, exact: false },
+  {
+    href: "/admin/opportunities",
+    label: "Opportunities",
+    icon: TrendingUp,
+    exact: false,
+    children: [
+      { href: "/admin/opportunities", label: "All Opportunities", icon: TrendingUp },
+      { href: "/admin/opportunities/sources", label: "Sources", icon: Rss },
+      { href: "/admin/opportunities/rules", label: "Scoring Rules", icon: Settings2 },
+      { href: "/admin/opportunities/sync-log", label: "Sync Log", icon: RefreshCw },
+    ],
+  },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -14,26 +26,57 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   function isActive(href: string, exact: boolean) {
     if (exact) return location === href;
+    return location === href;
+  }
+
+  function isGroupActive(href: string, exact: boolean) {
+    if (exact) return location === href;
     return location.startsWith(href);
   }
 
   const NavContent = () => (
-    <nav className="flex-1 p-4 space-y-1">
-      {NAV_ITEMS.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-            isActive(item.href, item.exact)
-              ? "bg-amber-500 text-black"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-          }`}
-          onClick={() => setSidebarOpen(false)}
-        >
-          <item.icon className="w-4 h-4 shrink-0" />
-          {item.label}
-        </Link>
-      ))}
+    <nav className="flex-1 p-4 space-y-0.5 overflow-y-auto">
+      {NAV_ITEMS.map((item) => {
+        const groupActive = isGroupActive(item.href, !!item.exact);
+        const inOppsSection = location.startsWith("/admin/opportunities");
+        return (
+          <div key={item.href}>
+            <Link
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                !item.children && isActive(item.href, !!item.exact)
+                  ? "bg-amber-500 text-black"
+                  : item.children && groupActive
+                  ? "text-amber-400 hover:bg-slate-800"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+              }`}
+              onClick={() => !item.children && setSidebarOpen(false)}
+            >
+              <item.icon className="w-4 h-4 shrink-0" />
+              {item.label}
+            </Link>
+            {item.children && inOppsSection && (
+              <div className="ml-4 mt-0.5 space-y-0.5 border-l border-slate-700 pl-3">
+                {item.children.map((child) => (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    className={`flex items-center gap-2.5 px-2 py-2 rounded-md text-xs font-semibold transition-colors ${
+                      location === child.href
+                        ? "bg-amber-500 text-black"
+                        : "text-slate-500 hover:text-slate-200 hover:bg-slate-800"
+                    }`}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <child.icon className="w-3.5 h-3.5 shrink-0" />
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 
@@ -62,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative flex flex-col w-56 bg-slate-900 h-full">
+          <aside className="relative flex flex-col w-64 bg-slate-900 h-full">
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <span className="font-extrabold text-white text-sm">Admin Panel</span>
               <button onClick={() => setSidebarOpen(false)} className="text-slate-400">

@@ -381,7 +381,6 @@ export const GetDashboardStatsResponse = zod.object({
   wonLeads: zod.number(),
   lostLeads: zod.number(),
   thisMonthLeads: zod.number(),
-  wonThisMonth: zod.number(),
   conversionRate: zod.number(),
 });
 
@@ -413,4 +412,465 @@ export const GetRecentLeadsResponse = zod.object({
       updatedAt: zod.coerce.date(),
     }),
   ),
+});
+
+/**
+ * @summary List opportunities with filters
+ */
+export const listOpportunitiesQuerySortDefault = `score`;
+export const listOpportunitiesQueryLimitDefault = 50;
+export const listOpportunitiesQueryOffsetDefault = 0;
+
+export const ListOpportunitiesQueryParams = zod.object({
+  status: zod.enum(["new", "saved", "dismissed", "converted"]).optional(),
+  tradeType: zod.coerce.string().optional(),
+  state: zod.coerce.string().optional(),
+  priority: zod.enum(["high", "medium", "low"]).optional(),
+  minScore: zod.coerce.number().optional(),
+  sort: zod
+    .enum(["score", "newest", "deadline"])
+    .default(listOpportunitiesQuerySortDefault),
+  limit: zod.coerce.number().default(listOpportunitiesQueryLimitDefault),
+  offset: zod.coerce.number().default(listOpportunitiesQueryOffsetDefault),
+});
+
+export const ListOpportunitiesResponse = zod.object({
+  opportunities: zod.array(
+    zod.object({
+      id: zod.string(),
+      sourceId: zod.string().nullish(),
+      externalId: zod.string().nullish(),
+      title: zod.string(),
+      description: zod.string().nullish(),
+      category: zod.string().nullish(),
+      tradeType: zod.string().nullish(),
+      city: zod.string().nullish(),
+      state: zod.string().nullish(),
+      budgetMin: zod.number().nullish(),
+      budgetMax: zod.number().nullish(),
+      estimatedValue: zod.number().nullish(),
+      postedAt: zod.coerce.date().nullish(),
+      dueAt: zod.coerce.date().nullish(),
+      sourceUrl: zod.string().nullish(),
+      sourceName: zod.string().nullish(),
+      ingestionType: zod.string().nullish(),
+      score: zod.number(),
+      priorityLevel: zod.enum(["high", "medium", "low"]).nullish(),
+      relevanceReason: zod.string().nullish(),
+      scoreReasonsJson: zod.record(zod.string(), zod.unknown()).nullish(),
+      status: zod.enum(["new", "saved", "dismissed", "converted"]),
+      reviewed: zod.boolean(),
+      convertedToLead: zod.boolean(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Create a manual opportunity
+ */
+export const CreateOpportunityBody = zod.object({
+  title: zod.string(),
+  description: zod.string().optional(),
+  tradeType: zod.string().optional(),
+  category: zod.string().optional(),
+  city: zod.string().optional(),
+  state: zod.string().optional(),
+  budgetMin: zod.number().optional(),
+  budgetMax: zod.number().optional(),
+  dueAt: zod.coerce.date().optional(),
+  sourceUrl: zod.string().optional(),
+});
+
+/**
+ * @summary List ingestion sync run history
+ */
+export const listSyncRunsQueryLimitDefault = 50;
+export const listSyncRunsQueryOffsetDefault = 0;
+
+export const ListSyncRunsQueryParams = zod.object({
+  limit: zod.coerce.number().default(listSyncRunsQueryLimitDefault),
+  offset: zod.coerce.number().default(listSyncRunsQueryOffsetDefault),
+});
+
+export const ListSyncRunsResponse = zod.object({
+  runs: zod.array(
+    zod.object({
+      id: zod.string(),
+      sourceId: zod.string().nullish(),
+      sourceName: zod.string(),
+      startedAt: zod.coerce.date(),
+      finishedAt: zod.coerce.date().nullish(),
+      status: zod.enum(["running", "success", "error"]),
+      itemsFetched: zod.number().nullish(),
+      itemsInserted: zod.number().nullish(),
+      itemsUpdated: zod.number().nullish(),
+      errorText: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+  total: zod.number(),
+});
+
+/**
+ * @summary Ingest an inbound email as an opportunity
+ */
+export const IngestEmailBody = zod.object({
+  from: zod.string().optional(),
+  subject: zod.string().optional(),
+  textBody: zod.string().optional(),
+  htmlBody: zod.string().optional(),
+  links: zod.array(zod.string()).optional(),
+  attachmentNames: zod.array(zod.string()).optional(),
+  receivedAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary List opportunity sources
+ */
+export const ListOpportunitySourcesResponse = zod.object({
+  sources: zod.array(
+    zod.object({
+      id: zod.string(),
+      key: zod.string(),
+      name: zod.string(),
+      ingestionType: zod.string(),
+      enabled: zod.boolean(),
+      configJson: zod.record(zod.string(), zod.unknown()).nullish(),
+      pollIntervalMinutes: zod.number().nullish(),
+      lastSyncAt: zod.coerce.date().nullish(),
+      lastError: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create an opportunity source
+ */
+export const CreateOpportunitySourceBody = zod.object({
+  key: zod.string(),
+  name: zod.string(),
+  ingestionType: zod.enum(["api", "rss", "manual", "search", "email"]),
+  enabled: zod.boolean().optional(),
+  configJson: zod.record(zod.string(), zod.unknown()).optional(),
+  pollIntervalMinutes: zod.number().optional(),
+});
+
+/**
+ * @summary Get an opportunity source
+ */
+export const GetOpportunitySourceParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetOpportunitySourceResponse = zod.object({
+  id: zod.string(),
+  key: zod.string(),
+  name: zod.string(),
+  ingestionType: zod.string(),
+  enabled: zod.boolean(),
+  configJson: zod.record(zod.string(), zod.unknown()).nullish(),
+  pollIntervalMinutes: zod.number().nullish(),
+  lastSyncAt: zod.coerce.date().nullish(),
+  lastError: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update an opportunity source
+ */
+export const UpdateOpportunitySourceParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateOpportunitySourceBody = zod.object({
+  name: zod.string().optional(),
+  enabled: zod.boolean().optional(),
+  configJson: zod.record(zod.string(), zod.unknown()).optional(),
+  pollIntervalMinutes: zod.number().optional(),
+});
+
+export const UpdateOpportunitySourceResponse = zod.object({
+  id: zod.string(),
+  key: zod.string(),
+  name: zod.string(),
+  ingestionType: zod.string(),
+  enabled: zod.boolean(),
+  configJson: zod.record(zod.string(), zod.unknown()).nullish(),
+  pollIntervalMinutes: zod.number().nullish(),
+  lastSyncAt: zod.coerce.date().nullish(),
+  lastError: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an opportunity source
+ */
+export const DeleteOpportunitySourceParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary Trigger a manual sync for a source
+ */
+export const TriggerSourceSyncParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const TriggerSourceSyncResponse = zod.object({
+  itemsFetched: zod.number(),
+  itemsInserted: zod.number(),
+  itemsUpdated: zod.number(),
+  error: zod.string().nullish(),
+});
+
+/**
+ * @summary List scoring rules
+ */
+export const ListOpportunityRulesResponse = zod.object({
+  rules: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      enabled: zod.boolean(),
+      includeKeywords: zod.array(zod.string()).nullish(),
+      excludeKeywords: zod.array(zod.string()).nullish(),
+      states: zod.array(zod.string()).nullish(),
+      tradeTypes: zod.array(zod.string()).nullish(),
+      minBudget: zod.number().nullish(),
+      maxBudget: zod.number().nullish(),
+      minScore: zod.number().nullish(),
+      urgencyWeight: zod.number(),
+      recencyWeight: zod.number(),
+      budgetWeight: zod.number(),
+      keywordWeight: zod.number(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Create a scoring rule
+ */
+export const CreateOpportunityRuleBody = zod.object({
+  name: zod.string(),
+  enabled: zod.boolean().optional(),
+  includeKeywords: zod.array(zod.string()).optional(),
+  excludeKeywords: zod.array(zod.string()).optional(),
+  states: zod.array(zod.string()).optional(),
+  tradeTypes: zod.array(zod.string()).optional(),
+  minBudget: zod.number().optional(),
+  maxBudget: zod.number().optional(),
+  minScore: zod.number().optional(),
+  urgencyWeight: zod.number().optional(),
+  recencyWeight: zod.number().optional(),
+  budgetWeight: zod.number().optional(),
+  keywordWeight: zod.number().optional(),
+});
+
+/**
+ * @summary Get a scoring rule
+ */
+export const GetOpportunityRuleParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetOpportunityRuleResponse = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  enabled: zod.boolean(),
+  includeKeywords: zod.array(zod.string()).nullish(),
+  excludeKeywords: zod.array(zod.string()).nullish(),
+  states: zod.array(zod.string()).nullish(),
+  tradeTypes: zod.array(zod.string()).nullish(),
+  minBudget: zod.number().nullish(),
+  maxBudget: zod.number().nullish(),
+  minScore: zod.number().nullish(),
+  urgencyWeight: zod.number(),
+  recencyWeight: zod.number(),
+  budgetWeight: zod.number(),
+  keywordWeight: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a scoring rule
+ */
+export const UpdateOpportunityRuleParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateOpportunityRuleBody = zod.object({
+  name: zod.string().optional(),
+  enabled: zod.boolean().optional(),
+  includeKeywords: zod.array(zod.string()).optional(),
+  excludeKeywords: zod.array(zod.string()).optional(),
+  states: zod.array(zod.string()).optional(),
+  tradeTypes: zod.array(zod.string()).optional(),
+  minBudget: zod.number().optional(),
+  maxBudget: zod.number().optional(),
+  minScore: zod.number().optional(),
+  urgencyWeight: zod.number().optional(),
+  recencyWeight: zod.number().optional(),
+  budgetWeight: zod.number().optional(),
+  keywordWeight: zod.number().optional(),
+});
+
+export const UpdateOpportunityRuleResponse = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  enabled: zod.boolean(),
+  includeKeywords: zod.array(zod.string()).nullish(),
+  excludeKeywords: zod.array(zod.string()).nullish(),
+  states: zod.array(zod.string()).nullish(),
+  tradeTypes: zod.array(zod.string()).nullish(),
+  minBudget: zod.number().nullish(),
+  maxBudget: zod.number().nullish(),
+  minScore: zod.number().nullish(),
+  urgencyWeight: zod.number(),
+  recencyWeight: zod.number(),
+  budgetWeight: zod.number(),
+  keywordWeight: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a scoring rule
+ */
+export const DeleteOpportunityRuleParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary Get opportunity detail with events
+ */
+export const GetOpportunityParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetOpportunityResponse = zod
+  .object({
+    id: zod.string(),
+    sourceId: zod.string().nullish(),
+    externalId: zod.string().nullish(),
+    title: zod.string(),
+    description: zod.string().nullish(),
+    category: zod.string().nullish(),
+    tradeType: zod.string().nullish(),
+    city: zod.string().nullish(),
+    state: zod.string().nullish(),
+    budgetMin: zod.number().nullish(),
+    budgetMax: zod.number().nullish(),
+    estimatedValue: zod.number().nullish(),
+    postedAt: zod.coerce.date().nullish(),
+    dueAt: zod.coerce.date().nullish(),
+    sourceUrl: zod.string().nullish(),
+    sourceName: zod.string().nullish(),
+    ingestionType: zod.string().nullish(),
+    score: zod.number(),
+    priorityLevel: zod.enum(["high", "medium", "low"]).nullish(),
+    relevanceReason: zod.string().nullish(),
+    scoreReasonsJson: zod.record(zod.string(), zod.unknown()).nullish(),
+    status: zod.enum(["new", "saved", "dismissed", "converted"]),
+    reviewed: zod.boolean(),
+    convertedToLead: zod.boolean(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  })
+  .and(
+    zod.object({
+      events: zod.array(
+        zod.object({
+          id: zod.string(),
+          opportunityId: zod.string(),
+          eventType: zod.string(),
+          eventNote: zod.string().nullish(),
+          createdAt: zod.coerce.date(),
+        }),
+      ),
+    }),
+  );
+
+/**
+ * @summary Update opportunity status or fields
+ */
+export const UpdateOpportunityParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateOpportunityBody = zod.object({
+  status: zod.enum(["new", "saved", "dismissed", "converted"]).optional(),
+  reviewed: zod.boolean().optional(),
+  convertedToLead: zod.boolean().optional(),
+  priorityLevel: zod.enum(["high", "medium", "low"]).optional(),
+});
+
+export const UpdateOpportunityResponse = zod.object({
+  id: zod.string(),
+  sourceId: zod.string().nullish(),
+  externalId: zod.string().nullish(),
+  title: zod.string(),
+  description: zod.string().nullish(),
+  category: zod.string().nullish(),
+  tradeType: zod.string().nullish(),
+  city: zod.string().nullish(),
+  state: zod.string().nullish(),
+  budgetMin: zod.number().nullish(),
+  budgetMax: zod.number().nullish(),
+  estimatedValue: zod.number().nullish(),
+  postedAt: zod.coerce.date().nullish(),
+  dueAt: zod.coerce.date().nullish(),
+  sourceUrl: zod.string().nullish(),
+  sourceName: zod.string().nullish(),
+  ingestionType: zod.string().nullish(),
+  score: zod.number(),
+  priorityLevel: zod.enum(["high", "medium", "low"]).nullish(),
+  relevanceReason: zod.string().nullish(),
+  scoreReasonsJson: zod.record(zod.string(), zod.unknown()).nullish(),
+  status: zod.enum(["new", "saved", "dismissed", "converted"]),
+  reviewed: zod.boolean(),
+  convertedToLead: zod.boolean(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an opportunity
+ */
+export const DeleteOpportunityParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary List events for an opportunity
+ */
+export const ListOpportunityEventsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ListOpportunityEventsResponse = zod.object({
+  events: zod.array(
+    zod.object({
+      id: zod.string(),
+      opportunityId: zod.string(),
+      eventType: zod.string(),
+      eventNote: zod.string().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary Add an event to an opportunity
+ */
+export const CreateOpportunityEventParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CreateOpportunityEventBody = zod.object({
+  eventType: zod.string(),
+  eventNote: zod.string().optional(),
 });

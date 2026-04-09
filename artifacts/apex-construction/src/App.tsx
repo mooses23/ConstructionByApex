@@ -19,6 +19,11 @@ import AdminLeads from "@/pages/admin/leads";
 import AdminLeadDetail from "@/pages/admin/lead-detail";
 import AdminQuotes from "@/pages/admin/quotes";
 import AdminQuoteDetail from "@/pages/admin/quote-detail";
+import AdminOpportunities from "@/pages/admin/opportunities";
+import AdminOpportunityDetail from "@/pages/admin/opportunity-detail";
+import AdminOpportunitySources from "@/pages/admin/opportunity-sources";
+import AdminOpportunityRules from "@/pages/admin/opportunity-rules";
+import AdminOpportunitySyncLog from "@/pages/admin/opportunity-sync-log";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +86,23 @@ function Router() {
       </Route>
       <Route path="/admin/quotes/:id">
         <AdminLayout><AdminQuoteDetail /></AdminLayout>
+      </Route>
+
+      {/* Opportunities — static routes before :id */}
+      <Route path="/admin/opportunities/sources">
+        <AdminLayout><AdminOpportunitySources /></AdminLayout>
+      </Route>
+      <Route path="/admin/opportunities/rules">
+        <AdminLayout><AdminOpportunityRules /></AdminLayout>
+      </Route>
+      <Route path="/admin/opportunities/sync-log">
+        <AdminLayout><AdminOpportunitySyncLog /></AdminLayout>
+      </Route>
+      <Route path="/admin/opportunities/:id">
+        <AdminLayout><AdminOpportunityDetail /></AdminLayout>
+      </Route>
+      <Route path="/admin/opportunities">
+        <AdminLayout><AdminOpportunities /></AdminLayout>
       </Route>
 
       <Route component={NotFound} />
