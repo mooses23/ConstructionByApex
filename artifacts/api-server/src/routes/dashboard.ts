@@ -23,7 +23,7 @@ router.get("/dashboard/stats", async (_req, res): Promise<void> => {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [statusCounts, total, thisMonthCount, wonCount] = await Promise.all([
+  const [statusCounts, total, thisMonthCount, wonCount, wonThisMonthCount] = await Promise.all([
     db
       .select({
         status: leadsTable.status,
@@ -40,6 +40,12 @@ router.get("/dashboard/stats", async (_req, res): Promise<void> => {
       .select({ count: count() })
       .from(leadsTable)
       .where(eq(leadsTable.status, "won")),
+    db
+      .select({ count: count() })
+      .from(leadsTable)
+      .where(
+        sql`${leadsTable.status} = 'won' AND ${leadsTable.updatedAt} >= ${startOfMonth}`
+      ),
   ]);
 
   const statusMap: Record<string, number> = {};
@@ -59,6 +65,7 @@ router.get("/dashboard/stats", async (_req, res): Promise<void> => {
       wonLeads: statusMap["won"] ?? 0,
       lostLeads: statusMap["lost"] ?? 0,
       thisMonthLeads: Number(thisMonthCount[0]?.count ?? 0),
+      wonThisMonth: Number(wonThisMonthCount[0]?.count ?? 0),
       conversionRate: totalCount > 0 ? Math.round((won / totalCount) * 100) : 0,
     })
   );

@@ -381,6 +381,7 @@ export const GetDashboardStatsResponse = zod.object({
   wonLeads: zod.number(),
   lostLeads: zod.number(),
   thisMonthLeads: zod.number(),
+  wonThisMonth: zod.number(),
   conversionRate: zod.number(),
 });
 

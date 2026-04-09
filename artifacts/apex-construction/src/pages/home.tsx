@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Phone, MessageSquare, FileText, Shield, Clock, Star, CheckCircle, MapPin, ChevronRight } from "lucide-react";
+import { Phone, MessageSquare, FileText, Shield, Clock, Star, CheckCircle, MapPin, ChevronRight, ClipboardList, Home, Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,27 @@ const TRUST_ITEMS = [
   { icon: CheckCircle, label: "Clean Communication", desc: "You always know what's happening and when." },
 ];
 
+const HOW_IT_WORKS = [
+  {
+    step: 1,
+    icon: ClipboardList,
+    title: "Request a Quote",
+    desc: "Fill out the form or give us a call. Tell us what you need — we'll review it and get back to you within one business day.",
+  },
+  {
+    step: 2,
+    icon: Home,
+    title: "Site Visit & Estimate",
+    desc: "We come to your home, look at the job in person, and give you a clear written estimate. No surprises.",
+  },
+  {
+    step: 3,
+    icon: Hammer,
+    title: "Work Begins",
+    desc: "Once you're ready, we schedule the job and get started. We keep the site clean and keep you updated throughout.",
+  },
+];
+
 export default function HomePage() {
   const { data: servicesData, isLoading: servicesLoading } = useListServices();
   const { data: projectsData, isLoading: projectsLoading } = useListProjects({ limit: 3 } as never);
@@ -26,6 +47,8 @@ export default function HomePage() {
   const services = servicesData?.services?.slice(0, 6) ?? [];
   const projects = projectsData?.projects?.slice(0, 3) ?? [];
   const testimonials = testimonialsData?.testimonials?.filter((t) => t.featured)?.slice(0, 3) ?? [];
+
+  const [heroProject, ...sideProjects] = projects;
 
   return (
     <div className="pb-16 md:pb-0">
@@ -90,6 +113,42 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* How It Works */}
+      <section className="py-16 bg-amber-50 border-b border-amber-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3">How It Works</h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto">
+              Three straightforward steps from first contact to finished job.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {HOW_IT_WORKS.map((item, index) => (
+              <div key={item.step} className="flex flex-col items-center text-center relative">
+                {index < HOW_IT_WORKS.length - 1 && (
+                  <div className="hidden md:block absolute top-8 left-[calc(50%+2.5rem)] right-[-calc(50%-2.5rem)] h-0.5 bg-amber-300 z-0" />
+                )}
+                <div className="relative z-10 w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mb-5 shadow-md">
+                  <item.icon className="w-7 h-7 text-black" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-slate-900 text-white text-xs font-extrabold rounded-full flex items-center justify-center">
+                    {item.step}
+                  </span>
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-lg mb-2">{item.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed max-w-xs">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <Link href="/quote">
+              <Button className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-12 px-8">
+                Request a Quote
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Services */}
       <section className="py-16 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -141,13 +200,42 @@ export default function HomePage() {
               Real work, real Ohio homes. See what a project with Apex looks like.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {projectsLoading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-64 rounded-xl" />
-                ))
-              : projects.map((project) => (
-                  <div key={project.id} className="rounded-xl overflow-hidden border border-slate-200 group shadow-sm hover:shadow-md transition-shadow">
+
+          {projectsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-64 rounded-xl" />
+              ))}
+            </div>
+          ) : projects.length === 0 ? null : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Hero card — spans 2 columns */}
+              {heroProject && (
+                <div className="md:col-span-2 rounded-xl overflow-hidden border border-slate-200 group shadow-sm hover:shadow-md transition-shadow">
+                  <div className="aspect-video md:aspect-[16/8] overflow-hidden">
+                    <img
+                      src={heroProject.imageUrl}
+                      alt={heroProject.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant="secondary" className="text-xs">{heroProject.category}</Badge>
+                      <span className="text-slate-400 text-xs flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />{heroProject.city}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-slate-900 text-lg mb-1">{heroProject.title}</h3>
+                    <p className="text-slate-500 text-sm line-clamp-2">{heroProject.summary}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Stacked side cards */}
+              <div className="flex flex-col gap-6">
+                {sideProjects.map((project) => (
+                  <div key={project.id} className="rounded-xl overflow-hidden border border-slate-200 group shadow-sm hover:shadow-md transition-shadow flex-1">
                     <div className="aspect-video overflow-hidden">
                       <img
                         src={project.imageUrl}
@@ -155,19 +243,22 @@ export default function HomePage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
-                    <div className="p-5">
-                      <div className="flex items-center gap-2 mb-2">
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-1">
                         <Badge variant="secondary" className="text-xs">{project.category}</Badge>
                         <span className="text-slate-400 text-xs flex items-center gap-1">
                           <MapPin className="w-3 h-3" />{project.city}
                         </span>
                       </div>
-                      <h3 className="font-bold text-slate-900 mb-1">{project.title}</h3>
-                      <p className="text-slate-500 text-sm line-clamp-2">{project.summary}</p>
+                      <h3 className="font-bold text-slate-900 text-sm mb-1">{project.title}</h3>
+                      <p className="text-slate-500 text-xs line-clamp-2">{project.summary}</p>
                     </div>
                   </div>
                 ))}
-          </div>
+              </div>
+            </div>
+          )}
+
           <div className="text-center mt-8">
             <Link href="/projects">
               <Button variant="outline" className="border-slate-300 text-slate-700 hover:border-amber-500 hover:text-amber-600">

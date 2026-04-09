@@ -105,25 +105,49 @@ export default function AdminLeadDetail() {
         <ArrowLeft className="w-4 h-4" /> Back to Leads
       </Link>
 
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">{lead.fullName}</h1>
-          <p className="text-slate-500 text-sm mt-1">{lead.serviceNeeded} · Submitted {new Date(lead.createdAt).toLocaleDateString()}</p>
+      {/* Lead header with quick-action buttons */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-900">{lead.fullName}</h1>
+            <p className="text-slate-500 text-sm mt-1">{lead.serviceNeeded} · Submitted {new Date(lead.createdAt).toLocaleDateString()}</p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className={`px-3 py-1 rounded-full text-sm font-bold capitalize ${STATUS_COLORS[lead.status] ?? ""}`}>
+              {lead.status}
+            </span>
+            <Select value={lead.status} onValueChange={handleStatusChange} disabled={updatingLead}>
+              <SelectTrigger className="w-36 h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["new", "contacted", "quoted", "won", "lost"].map((s) => (
+                  <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`px-3 py-1 rounded-full text-sm font-bold capitalize ${STATUS_COLORS[lead.status] ?? ""}`}>
-            {lead.status}
-          </span>
-          <Select value={lead.status} onValueChange={handleStatusChange} disabled={updatingLead}>
-            <SelectTrigger className="w-36 h-9 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {["new", "contacted", "quoted", "won", "lost"].map((s) => (
-                <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Quick-action buttons */}
+        <div className="flex flex-wrap gap-3">
+          <a href={`tel:${lead.phone}`}>
+            <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-12 px-5 text-sm">
+              <Phone className="w-4 h-4 mr-2" />
+              Call {lead.phone}
+            </Button>
+          </a>
+          <a href={`sms:${lead.phone}`}>
+            <Button size="lg" variant="outline" className="border-slate-300 text-slate-700 hover:border-amber-400 font-bold h-12 px-5 text-sm">
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Text
+            </Button>
+          </a>
+          <a href={`mailto:${lead.email}`}>
+            <Button size="lg" variant="outline" className="border-slate-300 text-slate-700 hover:border-amber-400 font-bold h-12 px-5 text-sm">
+              <Mail className="w-4 h-4 mr-2" />
+              Email
+            </Button>
+          </a>
         </div>
       </div>
 

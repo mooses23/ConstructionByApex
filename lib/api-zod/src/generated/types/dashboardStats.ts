@@ -14,5 +14,6 @@ export interface DashboardStats {
   wonLeads: number;
   lostLeads: number;
   thisMonthLeads: number;
+  wonThisMonth: number;
   conversionRate: number;
 }
