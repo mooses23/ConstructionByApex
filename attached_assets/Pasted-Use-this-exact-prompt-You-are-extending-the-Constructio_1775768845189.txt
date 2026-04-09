@@ -1,0 +1,318 @@
+Use this exact prompt:
+
+⸻
+
+You are extending the Construction By Apex admin portal by strengthening the Opportunities module.
+
+Your task in this step is to add:
+	1.	an exact search query library
+	2.	a curated list of Ohio-specific procurement portals / sources
+	3.	source presets the admin can run immediately
+
+Do not redesign the portal.
+Do not add unrelated CRM features.
+Do not add broad scraping.
+Do not use Replit-specific services.
+Keep everything compatible with Vercel + Supabase.
+
+Goal
+
+Create a high-signal discovery layer for contractor opportunities in Ohio using:
+	•	official portals
+	•	procurement platforms
+	•	approved search-based discovery
+	•	RSS / link review patterns where possible
+
+This is a discovery and review system, not a blind scraper.
+
+⸻
+
+Part 1 — Build a search query library
+
+Create a file such as:
+
+lib/opportunities/queryLibrary.ts
+
+Export categorized query presets for the search connector.
+
+Required categories
+	•	government bids
+	•	school / public facilities
+	•	property management / maintenance
+	•	subcontractor work
+	•	commercial renovation
+	•	emergency repair / facility work
+	•	roofing
+	•	paving / concrete
+	•	HVAC / plumbing / electrical
+	•	janitorial / grounds / misc maintenance
+
+Add these exact starter queries
+
+Government / public bids
+	•	Ohio construction bid
+	•	Ohio facility maintenance bid
+	•	Ohio renovation bid
+	•	Ohio repair bid site:.gov
+	•	Ohio public works bid construction
+	•	Ohio municipal construction bid
+	•	Ohio county construction RFP
+	•	Ohio city construction RFP
+	•	Ohio government maintenance contract
+	•	Ohio vendor bid facilities
+
+School / public facilities
+	•	Ohio school district construction bid
+	•	Ohio school roof repair bid
+	•	Ohio school renovation RFP
+	•	Ohio school maintenance bid
+	•	Ohio facilities construction commission project Ohio
+	•	Ohio public school paving bid
+	•	Ohio school HVAC replacement bid
+	•	Ohio district restroom renovation bid
+
+Property management / maintenance
+	•	Ohio property management maintenance vendor
+	•	Ohio apartment maintenance contractor bid
+	•	Ohio landlord repair contractor
+	•	Ohio facilities maintenance vendor request
+	•	Ohio commercial property maintenance RFP
+	•	Ohio building maintenance contractor needed
+
+Subcontractor / GC discovery
+	•	Ohio subcontractor needed construction
+	•	Ohio general contractor subcontractor bid
+	•	Ohio commercial remodel subcontractor
+	•	Ohio drywall subcontractor needed
+	•	Ohio painting subcontractor needed
+	•	Ohio flooring subcontractor needed
+	•	Ohio demolition subcontractor needed
+	•	Ohio sitework subcontractor needed
+
+Commercial renovation
+	•	Ohio tenant improvement bid
+	•	Ohio office renovation bid
+	•	Ohio retail buildout bid
+	•	Ohio commercial remodel RFP
+	•	Ohio interior renovation contractor bid
+
+Emergency / facility / service work
+	•	Ohio emergency repair contract
+	•	Ohio on call maintenance contract
+	•	Ohio building repair services bid
+	•	Ohio facility repair contractor
+	•	Ohio storm damage repair bid
+
+Roofing / paving / trades
+	•	Ohio roof replacement bid
+	•	Ohio roofing contractor bid
+	•	Ohio paving bid
+	•	Ohio asphalt repair bid
+	•	Ohio concrete repair bid
+	•	Ohio HVAC bid
+	•	Ohio plumbing bid
+	•	Ohio electrical contractor bid
+
+⸻
+
+Part 2 — Add query templates with locality modifiers
+
+Build query-generation helpers that can combine a base query with:
+	•	city
+	•	county
+	•	region
+	•	trade type
+	•	urgency keywords
+
+Example locality modifiers
+	•	Columbus
+	•	Cleveland
+	•	Cincinnati
+	•	Toledo
+	•	Dayton
+	•	Akron
+	•	Canton
+	•	Youngstown
+	•	Lorain
+	•	Hamilton County
+	•	Franklin County
+	•	Cuyahoga County
+	•	Summit County
+	•	Lucas County
+	•	Montgomery County
+
+Example generated query patterns
+	•	{baseQuery} Ohio
+	•	{baseQuery} Columbus Ohio
+	•	{baseQuery} Cuyahoga County Ohio
+	•	{baseQuery} site:.gov Ohio
+	•	{baseQuery} filetype:pdf Ohio
+	•	{baseQuery} bid OR RFP OR RFQ Ohio
+
+Build this cleanly and deterministically.
+
+⸻
+
+Part 3 — Ohio-specific procurement sources
+
+Create a seed list of Ohio-focused sources in a file like:
+
+lib/opportunities/ohioSources.ts
+
+Each source object should include:
+	•	key
+	•	name
+	•	type
+	•	base_url
+	•	geography
+	•	source_kind
+	•	notes
+	•	recommended_ingestion_method
+	•	default_enabled
+	•	search_tags
+
+Seed these sources
+
+1. OhioBuys / State of Ohio procurement
+Use OhioBuys as a primary Ohio state procurement source. Ohio DAS says OhioBuys is the State of Ohio’s online purchasing solution used by state agencies, boards, commissions, and the Ohio Attorney General’s Office, and the public contracts page supports filtering by keyword, commodities, contracting entity, supplier, and dates.
+
+Seed source:
+	•	key: ohiobuys_state
+	•	name: OhioBuys - State of Ohio
+	•	type: portal
+	•	base_url: https://ohiobuys.ohio.gov
+	•	geography: Ohio
+	•	source_kind: state_procurement
+	•	recommended_ingestion_method: search_review
+	•	default_enabled: true
+
+Also note that OFCC instructions tell users to access OhioBuys and browse public solicitations using filters like solicitation type and keyword.
+
+2. Ohio Purchasing Group / BidNet Direct
+Seed BidNet Direct’s Ohio Purchasing Group as a major aggregation source for Ohio state and local bids. BidNet says the Ohio Purchasing Group gives access to statewide and local government bids and RFPs, with open solicitations and keyword searching.
+
+Seed source:
+	•	key: bidnet_ohio
+	•	name: BidNet Direct - Ohio Purchasing Group
+	•	type: portal
+	•	base_url: https://www.bidnetdirect.com/ohio
+	•	geography: Ohio
+	•	source_kind: state_local_bid_aggregator
+	•	recommended_ingestion_method: search_review
+	•	default_enabled: true
+
+3. SAM.gov
+Seed SAM.gov as a high-value source for federal opportunities located in Ohio or relevant to Ohio contractors.
+
+Seed source:
+	•	key: sam_gov
+	•	name: SAM.gov
+	•	type: api
+	•	base_url: https://sam.gov
+	•	geography: US / Ohio-filtered
+	•	source_kind: federal_procurement
+	•	recommended_ingestion_method: api
+	•	default_enabled: true
+
+4. Ohio Facilities Construction Commission related public opportunities
+Seed OFCC-related opportunities as a priority class because Ohio law requires school district construction bids under OFCC projects to be publicly advertised. The Ohio Revised Code section on OFCC school construction says approved projects must advertise for construction bids.
+
+Seed source:
+	•	key: ofcc_related
+	•	name: Ohio Facilities Construction Commission Related Opportunities
+	•	type: portal
+	•	base_url: https://ofcc.ohio.gov
+	•	geography: Ohio
+	•	source_kind: school_public_facilities
+	•	recommended_ingestion_method: search_review
+	•	default_enabled: true
+
+5. Local agency / municipal / district pages discovered via search
+Seed a generic Ohio-local-public-bids source bucket for pages discovered through search queries.
+
+Seed source:
+	•	key: ohio_local_public_entities
+	•	name: Ohio Local Public Entities
+	•	type: search
+	•	base_url: ``
+	•	geography: Ohio
+	•	source_kind: municipal_county_school_discovery
+	•	recommended_ingestion_method: search_review
+	•	default_enabled: true
+
+⸻
+
+Part 4 — Add source presets in admin
+
+In /admin/opportunities/sources, preload source presets for the 5 sources above.
+
+Each preset should show:
+	•	source name
+	•	source type
+	•	Ohio relevance
+	•	recommended use
+	•	enabled toggle
+	•	last sync
+	•	manual run button
+
+Do not overcomplicate the UI.
+
+⸻
+
+Part 5 — Add “Run Discovery” presets
+
+In /admin/opportunities, add quick-run search presets:
+
+Preset groups
+	•	Ohio public bids
+	•	Ohio school / facility work
+	•	Ohio commercial renovation
+	•	Ohio subcontractor requests
+	•	Ohio maintenance / service contracts
+	•	Ohio roofing / paving / trades
+
+Each preset should run a small batch of predefined queries from the query library and push results into the review queue.
+
+Do not auto-convert results into leads.
+
+⸻
+
+Part 6 — Legal / implementation guardrails
+
+Important:
+	•	do not build a generic scraper for arbitrary websites
+	•	do not scrape search result pages directly
+	•	use approved APIs where available
+	•	use search-based discovery and manual review for portals that are better suited to human review
+	•	keep the system review-first, not auto-harvest-first
+
+This module should behave like a research assistant, not a theft bot.
+
+⸻
+
+Part 7 — Data model additions
+
+If needed, extend the source config model to support:
+	•	preset_queries
+	•	default_filters_json
+	•	region_tags
+	•	trade_tags
+	•	discovery_mode
+
+Keep schema lean.
+
+⸻
+
+Part 8 — Output requirements
+
+Deliver:
+	1.	queryLibrary.ts
+	2.	ohioSources.ts
+	3.	seeded source presets
+	4.	quick-run UI for preset discovery
+	5.	type definitions for query groups and source presets
+	6.	clean integration into existing Opportunities module
+
+Do not expand scope beyond this.
+
+⸻
