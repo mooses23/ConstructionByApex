@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Construction By Apex"
+version = "1.0.0"
+id = "artifacts/apex-construction"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23137
+
+[services.development]
+run = "pnpm --filter @workspace/apex-construction run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/apex-construction", "run", "build" ]
+publicDir = "artifacts/apex-construction/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23137"
+BASE_PATH = "/"

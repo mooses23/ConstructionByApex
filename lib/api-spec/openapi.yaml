@@ -3,20 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Construction By Apex API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: leads
+    description: Lead management
+  - name: projects
+    description: Project gallery
+  - name: testimonials
+    description: Customer testimonials
+  - name: services
+    description: Services offered
+  - name: quotes
+    description: Quote drafts
+  - name: dashboard
+    description: Admin dashboard stats
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,366 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── LEADS ────────────────────────────────────────────────────────────────
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      summary: List all leads
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [new, contacted, quoted, won, lost]
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  leads:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lead"
+                  total:
+                    type: integer
+                required: [leads, total]
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Submit a new lead (public quote request)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeadBody"
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Get lead details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lead detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateLead
+      tags: [leads]
+      summary: Update lead status or info
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLeadBody"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}/notes:
+    post:
+      operationId: addLeadNote
+      tags: [leads]
+      summary: Add internal note to lead
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddNoteBody"
+      responses:
+        "201":
+          description: Note added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadNote"
+
+  /leads/{id}/contacts:
+    post:
+      operationId: logContact
+      tags: [leads]
+      summary: Log a contact attempt
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogContactBody"
+      responses:
+        "201":
+          description: Contact logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadContact"
+
+  # ─── QUOTES ───────────────────────────────────────────────────────────────
+  /quotes:
+    get:
+      operationId: listQuotes
+      tags: [quotes]
+      summary: List all quotes
+      responses:
+        "200":
+          description: List of quotes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quotes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Quote"
+                required: [quotes]
+    post:
+      operationId: createQuote
+      tags: [quotes]
+      summary: Create a quote draft for a lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuoteBody"
+      responses:
+        "201":
+          description: Quote created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+
+  /quotes/{id}:
+    get:
+      operationId: getQuote
+      tags: [quotes]
+      summary: Get quote with line items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quote detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+    patch:
+      operationId: updateQuote
+      tags: [quotes]
+      summary: Update quote
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQuoteBody"
+      responses:
+        "200":
+          description: Updated quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+
+  # ─── PROJECTS ─────────────────────────────────────────────────────────────
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List gallery projects
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Project"
+                required: [projects]
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get project details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  # ─── TESTIMONIALS ─────────────────────────────────────────────────────────
+  /testimonials:
+    get:
+      operationId: listTestimonials
+      tags: [testimonials]
+      summary: List testimonials
+      responses:
+        "200":
+          description: Testimonials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  testimonials:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Testimonial"
+                required: [testimonials]
+
+  # ─── SERVICES ─────────────────────────────────────────────────────────────
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List services offered
+      responses:
+        "200":
+          description: Services
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Service"
+                required: [services]
+
+  # ─── DASHBOARD ────────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get admin dashboard statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/recent-leads:
+    get:
+      operationId: getRecentLeads
+      tags: [dashboard]
+      summary: Get recent lead submissions
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Recent leads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  leads:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lead"
+                required: [leads]
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +403,400 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    Lead:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        city:
+          type: string
+        zipCode:
+          type: string
+        serviceNeeded:
+          type: string
+        projectDescription:
+          type: string
+        preferredTimeline:
+          type: string
+        preferredContactMethod:
+          type: string
+        status:
+          type: string
+          enum: [new, contacted, quoted, won, lost]
+        photoUrls:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - fullName
+        - phone
+        - email
+        - city
+        - zipCode
+        - serviceNeeded
+        - projectDescription
+        - preferredTimeline
+        - preferredContactMethod
+        - status
+        - photoUrls
+        - createdAt
+        - updatedAt
+
+    LeadDetail:
+      allOf:
+        - $ref: "#/components/schemas/Lead"
+        - type: object
+          properties:
+            notes:
+              type: array
+              items:
+                $ref: "#/components/schemas/LeadNote"
+            contacts:
+              type: array
+              items:
+                $ref: "#/components/schemas/LeadContact"
+            quotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/Quote"
+          required: [notes, contacts, quotes]
+
+    LeadNote:
+      type: object
+      properties:
+        id:
+          type: integer
+        leadId:
+          type: integer
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, leadId, content, createdAt]
+
+    LeadContact:
+      type: object
+      properties:
+        id:
+          type: integer
+        leadId:
+          type: integer
+        method:
+          type: string
+          enum: [call, text, email, in-person]
+        outcome:
+          type: string
+        notes:
+          type: string
+        contactedAt:
+          type: string
+          format: date-time
+      required: [id, leadId, method, outcome, contactedAt]
+
+    Quote:
+      type: object
+      properties:
+        id:
+          type: integer
+        leadId:
+          type: integer
+        title:
+          type: string
+        status:
+          type: string
+          enum: [draft, sent, accepted, declined]
+        totalAmount:
+          type: number
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, leadId, title, status, totalAmount, createdAt]
+
+    QuoteDetail:
+      allOf:
+        - $ref: "#/components/schemas/Quote"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/QuoteItem"
+          required: [items]
+
+    QuoteItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        quoteId:
+          type: integer
+        description:
+          type: string
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        total:
+          type: number
+      required: [id, quoteId, description, quantity, unitPrice, total]
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        category:
+          type: string
+        summary:
+          type: string
+        city:
+          type: string
+        imageUrl:
+          type: string
+        beforeImageUrl:
+          type: string
+          nullable: true
+        afterImageUrl:
+          type: string
+          nullable: true
+        featured:
+          type: boolean
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - title
+        - category
+        - summary
+        - city
+        - imageUrl
+        - featured
+
+    Testimonial:
+      type: object
+      properties:
+        id:
+          type: integer
+        authorName:
+          type: string
+        authorCity:
+          type: string
+        rating:
+          type: integer
+        content:
+          type: string
+        serviceType:
+          type: string
+        featured:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - authorName
+        - authorCity
+        - rating
+        - content
+        - serviceType
+        - featured
+        - createdAt
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        idealFor:
+          type: string
+        category:
+          type: string
+        displayOrder:
+          type: integer
+      required:
+        - id
+        - title
+        - description
+        - idealFor
+        - category
+        - displayOrder
+
+    DashboardStats:
+      type: object
+      properties:
+        totalLeads:
+          type: integer
+        newLeads:
+          type: integer
+        contactedLeads:
+          type: integer
+        quotedLeads:
+          type: integer
+        wonLeads:
+          type: integer
+        lostLeads:
+          type: integer
+        thisMonthLeads:
+          type: integer
+        conversionRate:
+          type: number
+      required:
+        - totalLeads
+        - newLeads
+        - contactedLeads
+        - quotedLeads
+        - wonLeads
+        - lostLeads
+        - thisMonthLeads
+        - conversionRate
+
+    CreateLeadBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        city:
+          type: string
+        zipCode:
+          type: string
+        serviceNeeded:
+          type: string
+        projectDescription:
+          type: string
+        preferredTimeline:
+          type: string
+        preferredContactMethod:
+          type: string
+        photoUrls:
+          type: array
+          items:
+            type: string
+      required:
+        - fullName
+        - phone
+        - email
+        - city
+        - zipCode
+        - serviceNeeded
+        - projectDescription
+        - preferredTimeline
+        - preferredContactMethod
+
+    UpdateLeadBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [new, contacted, quoted, won, lost]
+        fullName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        city:
+          type: string
+        projectDescription:
+          type: string
+
+    AddNoteBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]
+
+    LogContactBody:
+      type: object
+      properties:
+        method:
+          type: string
+          enum: [call, text, email, in-person]
+        outcome:
+          type: string
+        notes:
+          type: string
+      required: [method, outcome]
+
+    CreateQuoteBody:
+      type: object
+      properties:
+        leadId:
+          type: integer
+        title:
+          type: string
+        notes:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              quantity:
+                type: number
+              unitPrice:
+                type: number
+            required: [description, quantity, unitPrice]
+      required: [leadId, title, items]
+
+    UpdateQuoteBody:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: string
+          enum: [draft, sent, accepted, declined]
+        notes:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              quantity:
+                type: number
+              unitPrice:
+                type: number
+            required: [description, quantity, unitPrice]

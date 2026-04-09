@@ -1,0 +1,265 @@
+You are a senior product engineer and conversion-focused web designer. Build a production-ready web app for a solo contractor brand called “Construction By Apex.”
+
+CRITICAL RULES:
+- This app must NOT be dependent on Replit-specific auth, hosting, database features, or runtime assumptions.
+- The final app must be deployable on Vercel.
+- Use Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, and Supabase.
+- Keep architecture clean, modular, and simple.
+- Do NOT import the old Apex Property Care architecture or feature bloat.
+- This is a ground-up rebuild.
+- The only legacy consideration is that Supabase may contain some old tables and RLS policies from v1, but the new app should be able to work from a fresh schema and ignore old baggage.
+- Assume Supabase can be reset if needed.
+- Focus on revenue, trust, usability, mobile conversion, local SEO, and clean admin workflow.
+- Build for a solo contractor first, not a software company.
+
+PROJECT GOAL:
+Create a high-converting contractor website plus a lightweight admin dashboard for managing leads and quote requests.
+
+BRAND:
+Construction By Apex
+
+TARGET MARKET:
+Local residential and small commercial construction / repair / improvement customers in Ohio.
+
+PRIMARY BUSINESS GOALS:
+1. Generate more qualified leads
+2. Increase calls, texts, and quote requests
+3. Showcase trust and project quality
+4. Keep lead management simple for one owner/operator
+5. Make the brand look professional, modern, and credible
+
+DO NOT BUILD:
+- Enterprise CRM
+- Opportunity finder
+- RSS bidding system
+- Complex invoice system
+- Subscription billing
+- Advanced role-based portals
+- Replit auth
+- Replit database dependencies
+- Client self-service portal
+- Complex automation engine
+- E-signature integration in v1
+- Overengineered analytics
+
+BUILD THIS INSTEAD:
+
+PUBLIC WEBSITE PAGES:
+1. Home
+2. Services
+3. Service Area
+4. Projects / Before & After Gallery
+5. Reviews / Testimonials
+6. About
+7. Request a Quote
+8. Contact
+
+HOME PAGE REQUIREMENTS:
+- Strong hero section with headline, subheadline, CTA buttons
+- 3 main CTA buttons: Call Now, Text Now, Request a Quote
+- Section for top service categories
+- Trust section with benefits (licensed/insured if applicable, fast response, quality workmanship, clear communication)
+- Featured projects preview
+- Testimonials preview
+- Service area snapshot
+- Final CTA section
+
+SERVICES PAGE:
+- Clean service cards
+- Each service should have:
+  - title
+  - short description
+  - ideal customer use case
+  - CTA
+- Structure the content for local SEO and easy scanning
+- Support future dedicated service pages
+
+PROJECTS PAGE:
+- Project cards with image, title, category, short summary, city, and optional before/after
+- Filter by category
+- Strong visual presentation
+- Mobile-friendly gallery layout
+
+REVIEWS PAGE:
+- Testimonial cards
+- Space to later integrate Google reviews
+- Strong emphasis on trust, responsiveness, cleanliness, and workmanship
+
+ABOUT PAGE:
+- Clear human story
+- Explain what Construction By Apex does
+- Emphasize reliability, communication, and quality
+- No corporate fluff
+
+CONTACT PAGE:
+- Call CTA
+- Text CTA
+- Email CTA
+- Simple contact form
+- Service area details
+- Business hours
+- Emergency service note if applicable
+
+QUOTE REQUEST PAGE:
+Create a friction-light quote request form with:
+- full name
+- phone
+- email
+- city
+- zip code
+- service needed
+- project description
+- preferred timeline
+- preferred contact method
+- photo upload
+- submit button
+
+After submission:
+- save to Supabase
+- upload files to Supabase Storage
+- show success state
+- optionally send email notification to admin
+
+ADMIN DASHBOARD:
+Passwordless or email auth is acceptable if implemented cleanly with Supabase Auth.
+Keep admin simple.
+
+Required sections:
+1. Dashboard
+   - total leads
+   - new leads
+   - contacted
+   - quoted
+   - won
+   - lost
+   - recent submissions
+
+2. Leads list
+   - searchable
+   - filterable by status
+   - sort by newest
+
+3. Lead detail page
+   - customer info
+   - project details
+   - uploaded images
+   - internal notes
+   - status updates
+   - contact log
+   - ability to mark as quoted / won / lost
+
+4. Basic quote draft support
+   - simple internal estimate builder
+   - line items
+   - totals
+   - no Stripe
+   - no full invoice system
+   - printable clean view is enough for v1
+
+DATABASE / SUPABASE:
+Design a fresh, clean schema.
+Ignore old v1 complexity unless directly useful.
+
+Suggested tables:
+- profiles
+- leads
+- lead_notes
+- lead_contacts
+- quotes
+- quote_items
+- project_gallery
+- testimonials
+- site_settings
+
+Use RLS properly.
+Policies should be simple and safe.
+Admin-only tables should be protected.
+Public quote form submissions should be handled safely.
+Make sure columns commonly used in RLS or lookups are indexed.
+
+FILES / STORAGE:
+Use Supabase Storage for:
+- quote request uploads
+- project gallery images
+
+SEO REQUIREMENTS:
+- Proper metadata on all public pages
+- Local SEO structure
+- schema markup / JSON-LD where useful
+- optimized headings
+- clean URLs
+- fast mobile performance
+- image optimization strategy compatible with Vercel
+
+DESIGN REQUIREMENTS:
+Style should feel:
+- strong
+- modern
+- clean
+- trustworthy
+- contractor-premium
+- not luxury-fake
+- not generic template junk
+
+Use:
+- bold typography
+- clean spacing
+- dark neutral palette with one strong accent color
+- large tap targets
+- clear CTA hierarchy
+- excellent mobile responsiveness
+
+UX REQUIREMENTS:
+- Customer should be able to request a quote in under 90 seconds
+- Every page should have a clear CTA
+- No clutter
+- No dashboard complexity for public users
+- Simple navigation
+- Sticky mobile call-to-action is encouraged
+
+CONTENT DIRECTION:
+Use simple, plainspoken service-business copy.
+Do not use empty buzzwords.
+Write copy like a reliable contractor, not a tech startup.
+
+ARCHITECTURE REQUIREMENTS:
+- Clean folder structure
+- Reusable components
+- Clear separation of public site and admin area
+- Server actions or API routes used appropriately
+- Environment variables documented
+- Vercel-ready
+- No Replit lock-in
+- No unnecessary packages
+
+DELIVERABLES:
+1. Full app scaffold
+2. Supabase schema
+3. RLS policies
+4. Seed/sample content for services, testimonials, and projects
+5. Clean responsive UI
+6. Setup instructions for Vercel + Supabase
+7. README explaining architecture and how to run/deploy
+8. Clear TODO list for future phase 2 items
+
+PHASE 2 IDEAS TO LEAVE AS TODO ONLY:
+- Google reviews integration
+- SMS notifications
+- calendar sync
+- richer quote PDFs
+- online payments
+- invoices
+- contracts/e-sign
+- advanced analytics
+
+IMPORTANT:
+Whenever choosing between “more features” and “more clarity,” choose clarity.
+Whenever choosing between “clever architecture” and “easy maintenance,” choose easy maintenance.
+Whenever choosing between “platform thinking” and “solo contractor revenue,” choose solo contractor revenue.
+
+Now begin by:
+1. defining the final folder structure
+2. defining the Supabase schema
+3. planning the UI routes
+4. generating the homepage and quote request flow first
+5. then building the admin lead workflow
