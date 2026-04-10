@@ -7,6 +7,8 @@ import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
 import MobileCTA from "@/components/MobileCTA";
 import AdminLayout from "@/components/AdminLayout";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { AuthProvider } from "@/hooks/useAuth";
 import HomePage from "@/pages/home";
 import ServicesPage from "@/pages/services";
 import ProjectsPage from "@/pages/projects";
@@ -14,6 +16,7 @@ import ReviewsPage from "@/pages/reviews";
 import AboutPage from "@/pages/about";
 import ContactPage from "@/pages/contact";
 import QuotePage from "@/pages/quote";
+import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/index";
 import AdminLeads from "@/pages/admin/leads";
 import AdminLeadDetail from "@/pages/admin/lead-detail";
@@ -71,38 +74,43 @@ function Router() {
         <PublicLayout><QuotePage /></PublicLayout>
       </Route>
 
-      {/* Admin Area */}
+      {/* Admin Login */}
+      <Route path="/admin/login">
+        <AdminLogin />
+      </Route>
+
+      {/* Admin Area (protected) */}
       <Route path="/admin">
-        <AdminLayout><AdminDashboard /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>
       </Route>
       <Route path="/admin/leads">
-        <AdminLayout><AdminLeads /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminLeads /></AdminLayout></ProtectedRoute>
       </Route>
       <Route path="/admin/leads/:id">
-        <AdminLayout><AdminLeadDetail /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminLeadDetail /></AdminLayout></ProtectedRoute>
       </Route>
       <Route path="/admin/quotes">
-        <AdminLayout><AdminQuotes /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminQuotes /></AdminLayout></ProtectedRoute>
       </Route>
       <Route path="/admin/quotes/:id">
-        <AdminLayout><AdminQuoteDetail /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminQuoteDetail /></AdminLayout></ProtectedRoute>
       </Route>
 
       {/* Opportunities — static routes before :id */}
       <Route path="/admin/opportunities/sources">
-        <AdminLayout><AdminOpportunitySources /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminOpportunitySources /></AdminLayout></ProtectedRoute>
       </Route>
       <Route path="/admin/opportunities/rules">
-        <AdminLayout><AdminOpportunityRules /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminOpportunityRules /></AdminLayout></ProtectedRoute>
       </Route>
       <Route path="/admin/opportunities/sync-log">
-        <AdminLayout><AdminOpportunitySyncLog /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminOpportunitySyncLog /></AdminLayout></ProtectedRoute>
       </Route>
       <Route path="/admin/opportunities/:id">
-        <AdminLayout><AdminOpportunityDetail /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminOpportunityDetail /></AdminLayout></ProtectedRoute>
       </Route>
       <Route path="/admin/opportunities">
-        <AdminLayout><AdminOpportunities /></AdminLayout>
+        <ProtectedRoute><AdminLayout><AdminOpportunities /></AdminLayout></ProtectedRoute>
       </Route>
 
       <Route component={NotFound} />
@@ -114,9 +122,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <AuthProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+        </AuthProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

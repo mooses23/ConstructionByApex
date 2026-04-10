@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, FileText, ChevronRight, Menu, X, TrendingUp, Settings2, RefreshCw, Rss } from "lucide-react";
+import { LayoutDashboard, Users, FileText, ChevronRight, Menu, X, TrendingUp, Settings2, RefreshCw, Rss, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -23,6 +24,13 @@ const NAV_ITEMS = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout } = useAuth();
+  const [, navigate] = useLocation();
+
+  async function handleLogout() {
+    await logout();
+    navigate("/admin/login");
+  }
 
   function isActive(href: string, exact: boolean) {
     if (exact) return location === href;
@@ -94,10 +102,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="text-xs text-slate-500 uppercase tracking-widest mt-2 block">Admin</span>
         </div>
         <NavContent />
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-800 space-y-2">
           <Link href="/" className="text-xs text-slate-500 hover:text-amber-400 transition-colors flex items-center gap-1">
             View Public Site <ChevronRight className="w-3 h-3" />
           </Link>
+          <button
+            onClick={handleLogout}
+            className="text-xs text-slate-500 hover:text-red-400 transition-colors flex items-center gap-1 w-full"
+          >
+            <LogOut className="w-3 h-3" /> Sign Out
+          </button>
         </div>
       </aside>
 

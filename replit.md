@@ -36,10 +36,13 @@ Use `pnpm --filter @workspace/db run push` which uses `drizzle.config.cjs` (CJS-
 - Home, Services, Projects, Reviews, About, Contact pages
 - Quote request form → saves lead to DB
 
-### Admin Portal (`/admin`)
+### Admin Portal (`/admin`) — protected by session auth
+- **Login** (`/admin/login`) — username/password form, bcrypt verification, HTTP-only session cookie (8h expiry)
 - **Dashboard** — stats cards, recent leads, follow-up queue
 - **Leads** (`/admin/leads`) — list, search, status filter; detail page with notes
 - **Quotes** (`/admin/quotes`) — list and detail pages
+- Admin credentials: set via `ADMIN_USERNAME` / `ADMIN_PASSWORD` env vars at seed time
+- Seed command: `ADMIN_PASSWORD=... pnpm --filter @workspace/scripts run seed-admin`
 
 ### Opportunity Intelligence Engine
 - **Opportunities** (`/admin/opportunities`) — scored & ranked job opportunities (20 seeded)
@@ -50,10 +53,18 @@ Use `pnpm --filter @workspace/db run push` which uses `drizzle.config.cjs` (CJS-
 - **Scoring Rules** (`/admin/opportunities/rules`) — keyword filters + 4 weight sliders per rule
 - **Sync Log** (`/admin/opportunities/sync-log`) — per-run stats table with error messages
 
-## Database Tables (13 total)
+## Database Tables (15 total)
 - `leads`, `lead_contacts`, `lead_notes`, `quotes`, `quote_items`
 - `services`, `testimonials`, `project_gallery`
 - `opportunities`, `opportunity_sources`, `opportunity_rules`, `opportunity_sync_runs`, `opportunity_events`
+- `admin_users`, `admin_sessions`
+
+## Auth API Routes
+- `POST /api/auth/login` — authenticate with username/password, returns session cookie
+- `POST /api/auth/logout` — clear session
+- `GET /api/auth/me` — check current session
+- Admin-only routes (leads, quotes, dashboard, opportunities) protected by `requireAdmin` middleware
+- Public routes (projects, testimonials, services, POST /leads) remain open
 
 ## API Routes — Express route ordering
 Static sub-paths (e.g. `/sources`, `/rules`, `/sync-log`) MUST be declared before `/:id` in the router.

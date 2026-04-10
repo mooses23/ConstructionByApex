@@ -88,7 +88,10 @@ export default function SiteFooter() {
           <p className="text-slate-500 text-xs">
             &copy; {new Date().getFullYear()} Construction By Apex. All rights reserved.
           </p>
-          <p className="text-slate-500 text-xs">Central Ohio's Trusted Contractor</p>
+          <div className="flex items-center gap-3">
+            <p className="text-slate-500 text-xs">Central Ohio's Trusted Contractor</p>
+            <Link href="/admin" className="text-slate-600 hover:text-slate-500 text-[10px] transition-colors">Admin</Link>
+          </div>
         </div>
       </div>
     </footer>
