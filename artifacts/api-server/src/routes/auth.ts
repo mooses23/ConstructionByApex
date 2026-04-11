@@ -71,12 +71,20 @@ router.post("/auth/login", async (req, res) => {
 router.post("/auth/logout", async (req, res) => {
   const token = getSessionToken(req);
 
-  if (token) {
+  if (!token) {
+    logger.debug("Logout called without session cookie");
+    res.json({ ok: true });
+    return;
+  }
+
+  try {
     await db
       .delete(adminSessionsTable)
       .where(eq(adminSessionsTable.token, token));
     clearSessionCookie(res);
     logger.info("Admin logged out");
+  } catch (err) {
+    logger.error({ err }, "Logout failed: database error");
   }
 
   res.json({ ok: true });
