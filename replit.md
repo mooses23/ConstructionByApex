@@ -110,3 +110,37 @@ Full CRUD + sync module for contractor bid opportunities. See:
 #### Scoring Engine
 Keyword match +3, trade match +2, state match +2, budget above threshold +1, posted ≤7 days +1, deadline ≤14 days +1.
 Priority: High ≥8, Medium ≥4, Low <4.
+
+## Vercel Deployment
+
+### Environment Variables
+
+**API Server** (Vercel project for `artifacts/api-server`):
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `DATABASE_URL` | `postgresql://postgres:...@db.XXX.supabase.co:5432/postgres` | Supabase connection string |
+| `NODE_ENV` | `production` | Enables SSL + cross-site cookies |
+| `CORS_ORIGIN` | `https://your-frontend.vercel.app` | Frontend URL (comma-separate for multiple) |
+
+**Frontend** (Vercel project for `artifacts/apex-construction`):
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `VITE_API_URL` | `https://your-api.vercel.app` | API server URL (no trailing slash) |
+
+### Seeding the Admin User in Production
+
+Run from the Replit shell with your Supabase `DATABASE_URL`:
+
+```bash
+DATABASE_URL=postgresql://postgres:PASSWORD@db.XXXXX.supabase.co:5432/postgres \
+  ADMIN_PASSWORD='hardhat$2026' \
+  pnpm --filter @workspace/scripts run seed-admin
+```
+
+The seed script will create the user if it doesn't exist, or update the password if it does.
+
+### Cross-Origin Cookie Fix
+
+The API uses `sameSite: "none"` + `secure: true` in production so session cookies work when the frontend and API are on different Vercel domains. CORS is locked to the `CORS_ORIGIN` env var.

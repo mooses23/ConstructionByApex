@@ -13,14 +13,43 @@ export function setSessionCookie(res: Response, token: string, maxAgeMs: number)
   res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "strict" : "lax",
+    sameSite: isProduction ? "none" : "lax",
     maxAge: maxAgeMs,
     path: "/",
   });
 }
 
 export function clearSessionCookie(res: Response): void {
-  res.clearCookie(SESSION_COOKIE, { path: "/" });
+  const isProduction = process.env.NODE_ENV === "production";
+  res.clearCookie(SESSION_COOKIE, {
+    path: "/",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
+}
+
+export function csrfProtection(req: Request, res: Response, next: NextFunction): void {
+  const safeMethods = ["GET", "HEAD", "OPTIONS"];
+  if (safeMethods.includes(req.method)) {
+    next();
+    return;
+  }
+
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (!corsOrigin) {
+    next();
+    return;
+  }
+
+  const allowed = corsOrigin.split(",").map((o) => o.trim());
+  const origin = req.headers.origin;
+
+  if (!origin || !allowed.includes(origin)) {
+    res.status(403).json({ message: "Forbidden: invalid origin" });
+    return;
+  }
+
+  next();
 }
 
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {

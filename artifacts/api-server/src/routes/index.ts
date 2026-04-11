@@ -9,9 +9,11 @@ import servicesRouter from "./services";
 import dashboardRouter from "./dashboard";
 import opportunitiesRouter from "./opportunities";
 import authRouter from "./auth";
-import { requireAdmin } from "../middleware/auth";
+import { requireAdmin, csrfProtection } from "../middleware/auth";
 
 const router: IRouter = Router();
+
+router.use(csrfProtection);
 
 router.use(healthRouter);
 router.use(authRouter);
