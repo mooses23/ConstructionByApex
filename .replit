@@ -45,3 +45,6 @@ externalPort = 3002
 [userenv]
 
 [userenv.shared]
+
+[userenv.production]
+CORS_ORIGIN = "https://constructionbyapex.com,https://construction-by-apex-apex-construct.vercel.app"
